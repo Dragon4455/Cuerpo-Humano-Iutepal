@@ -7,12 +7,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // bone data (short examples)
   const bones = {
+<<<<<<< Updated upstream
     skeleton: { title: 'Skeletal System', text: 'The skeletal system provides structure, protects organs, and enables movement. Major bones include the skull, clavicle, scapula, humerus, femur and more.', img: 'assets/assets/skeleton.png' },
     skull: { title: 'Skull', text: 'The skull protects the brain and supports the structures of the face.', img: 'https://via.placeholder.com/640x360.png?text=Skull' },
     clavicle: { title: 'Clavicle', text: 'The clavicle (collarbone) connects the arm to the body, providing structural support.', img: 'https://via.placeholder.com/640x360.png?text=Clavicle' },
     scapula: { title: 'Scapula', text: 'The scapula (shoulder blade) helps with arm movement and attachment of muscles.', img: 'https://via.placeholder.com/640x360.png?text=Scapula' },
     humerus: { title: 'Humerus', text: 'The humerus is the long bone in the upper arm between shoulder and elbow.', img: 'https://via.placeholder.com/640x360.png?text=Humerus' },
     femur: { title: 'Femur', text: 'The femur is the thigh bone and the longest bone in the human body.', img: 'https://via.placeholder.com/640x360.png?text=Femur' }
+=======
+    skeleton: { title: 'Sistema Digestivo', text: 'El sistema digestivo es un complejo conjunto de órganos encargados del proceso de la digestión; es decir, la transformación de los alimentos para que puedan ser absorbidos y utilizados por las células del organismo', img: 'assets/assets/digestivo.svg' }
+>>>>>>> Stashed changes
   };
 
   reels.forEach(reel => {
@@ -99,19 +103,170 @@ document.addEventListener('DOMContentLoaded', () => {
   // Populate lower reel with given items (array of {key, label})
   const lowerReelTrack = document.querySelector('#reel2 .reel-track');
   function populateLowerReel(items) {
-    lowerReelTrack.innerHTML = items.map(it => `<div class="card" data-key="${it.key}">${it.label}</div>`).join('');
+    // Always include special action cards at the start (they will be gated)
+    const actionCards = `
+      <div class="card" data-action="open-diagram">Diagrama Expandido</div>
+      <div class="card" data-action="open-multimedia">Multimedia</div>
+    `;
+    const itemHtml = items.map(it => `<div class="card" data-key="${it.key}">${it.label}</div>`).join('');
+    lowerReelTrack.innerHTML = actionCards + itemHtml;
     // attach explicit click handlers to new cards to avoid delegation issues
     const newCards = lowerReelTrack.querySelectorAll('.card');
     newCards.forEach(c => {
       c.style.cursor = 'pointer';
       c.onclick = (ev) => {
         const key = c.dataset.key;
+<<<<<<< Updated upstream
         if (key && bones[key]) showInVisualizer(key);
         ev.stopPropagation();
+=======
+        if (key) {
+          handleCardKey(key);
+          ev.stopPropagation();
+        }
+        // if no data-key (action cards), allow event to bubble to delegation handler
+>>>>>>> Stashed changes
       };
     });
   }
 
+<<<<<<< Updated upstream
+=======
+  // Local fallback data when API is unavailable (editable)
+  window.localOrganList = [
+    { key: 'SD_estomago', label: 'Estómago' },
+    { key: 'SD_higado', label: 'Hígado' },
+    { key: 'SD_intestino', label: 'Intestino' },
+    { key: 'SD_pancreas', label: 'Páncreas' }
+  ];
+
+  window.localOrganData = {
+    SD_estomago: { nombre: 'Estómago', descripcion: 'Órgano muscular en forma de bolsa que recibe y mezcla los alimentos con jugos gástricos para iniciar la digestión.' },
+    SD_higado: { nombre: 'Hígado', descripcion: 'Órgano que procesa nutrientes absorbidos, detoxifica sustancias y produce bilis.' },
+    SD_intestino: { nombre: 'Intestino', descripcion: 'Conducto donde se absorben nutrientes y se continúa la digestión; incluye delgado y grueso.' },
+    SD_pancreas: { nombre: 'Páncreas', descripcion: 'Glándula que secreta enzimas digestivas y hormonas como la insulina.' }
+  };
+
+  // Display organ data in the visualizer (name + description)
+  function displayOrganData(data) {
+    const name = data.nombre || data.name || data.title || 'Órgano';
+    const desc = data.descripcion || data.descripcionCorta || data.info || data.text || '';
+    vizContent.innerHTML = `<h4>${name}</h4><p>${desc}</p>`;
+    // optional image if provided
+    const imgSrc = data.img || data.imagen || data.image;
+    if (imgSrc) {
+      const img = new Image();
+      img.src = imgSrc;
+      img.alt = name;
+      img.style.width = '100%';
+      img.style.height = 'auto';
+      img.style.objectFit = 'contain';
+      img.onload = () => vizContent.appendChild(img);
+    }
+  }
+  // expose display function so other scripts (svgloader) can call it
+  window.displayOrganData = displayOrganData;
+
+  // Handle clicks on cards: either show local bone or fetch from API
+  async function handleCardKey(key) {
+    if (bones[key]) return showInVisualizer(key);
+    try {
+      const res = await fetch(`http://localhost:3000/api/organo/${key}`);
+      const data = await res.json();
+      if (!data.error) {
+        displayOrganData(data);
+      } else {
+        console.warn('No hay datos para', key);
+      }
+    } catch (err) {
+      console.error('Error fetching organ data:', err);
+    }
+  }
+
+  // Load organ list from the API and populate the lower reel
+  async function loadOrganList() {
+    const base = 'http://localhost:3000/api/organo';
+    const tries = [base, base + 's', base + '/list'];
+    let list = null;
+    for (const url of tries) {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (Array.isArray(data)) { list = data; break; }
+        // some APIs return {items: [...]}
+        if (data && Array.isArray(data.items)) { list = data.items; break; }
+      } catch (_) {}
+    }
+    if (!list) {
+      console.warn('No se pudo obtener la lista de órganos desde la API — usando datos locales si existen');
+      if (window.localOrganList && window.localOrganList.length) {
+        populateLowerReel(window.localOrganList);
+      }
+      return;
+    }
+    const items = list.map(it => ({ key: it.id || it._id || it.codigo || it.key || it.nombre, label: it.nombre || it.name || it.label || String(it.id || it._id || it.codigo) }));
+    populateLowerReel(items);
+  }
+
+  // Wait until the injected SVG container has organ elements, then return their IDs
+  function waitForSvgOrganIds(wrapperId, timeout = 2000) {
+    const start = Date.now();
+    return new Promise((resolve) => {
+      const check = () => {
+        const container = document.getElementById(wrapperId);
+        if (container) {
+          const organos = Array.from(container.querySelectorAll('[id^="SD_"]'));
+          if (organos.length) return resolve(organos.map(el => el.id));
+        }
+        if (Date.now() - start > timeout) return resolve([]);
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+  }
+
+  // After the SVG is shown inside the visualizer, extract organ IDs and populate lower reel
+  async function populateLowerFromVizSvg(imgSrc) {
+    if (!imgSrc) return;
+    const wrapperId = 'viz-svg-container';
+    // wait for the svg to be injected
+    const ids = await waitForSvgOrganIds(wrapperId, 3000);
+    if (!ids || !ids.length) {
+      // fallback: try to fetch the svg and parse IDs directly
+      try {
+        const res = await fetch(imgSrc);
+        const text = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'image/svg+xml');
+        const organos = Array.from(doc.querySelectorAll('[id^="SD_"]'));
+        if (organos.length) {
+          const ids2 = organos.map(el => el.id);
+          return populateNamesForIds(ids2);
+        }
+      } catch (err) {
+        console.warn('No se pudo parsear SVG remoto:', err);
+      }
+      return;
+    }
+    return populateNamesForIds(ids);
+  }
+
+  // For a list of organ IDs, ask the API for each name and populate the lower reel
+  async function populateNamesForIds(ids) {
+    const items = [];
+    await Promise.all(ids.map(async (id) => {
+      let label = id;
+      try {
+        const res = await fetch(`http://localhost:3000/api/organo/${id}`);
+        const data = await res.json();
+        if (data && (data.nombre || data.name)) label = data.nombre || data.name;
+      } catch (_) {}
+      items.push({ key: id, label });
+    }));
+    if (items.length) populateLowerReel(items);
+  }
+
+>>>>>>> Stashed changes
   // Show bone info in visualizer
   function showInVisualizer(key) {
     const info = bones[key];
@@ -134,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+<<<<<<< Updated upstream
   // when first card on upper reel is clicked, populate lower reel with bones
   const topFirst = document.querySelector('#reel1 .reel-track .card');
   if (topFirst) {
@@ -149,16 +305,58 @@ document.addEventListener('DOMContentLoaded', () => {
       populateLowerReel(boneItems);
       // also show a general skeleton overview in the visualizer
       showInVisualizer('skeleton');
+=======
+  // Upper reel: track which system is selected. Special lower-reel actions are gated
+  // but the lower reel should always show the action cards (they persist).
+  let currentSystem = null;
+  window.currentSystem = currentSystem;
+  const upperCards = document.querySelectorAll('#reel1 .reel-track .card');
+  upperCards.forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', () => {
+      const label = card.textContent.trim().toLowerCase();
+      currentSystem = label;
+      window.currentSystem = currentSystem;
+      if (label === 'digestivo') {
+        // show overview in visualizer but do NOT auto-populate lower reel with parts
+        showInVisualizer('skeleton');
+      } else {
+        // show a simple message for other systems; keep lower reel intact
+        if (vizContent) vizContent.innerHTML = `<p>Sistema seleccionado: ${card.textContent.trim()}.</p>`;
+      }
+>>>>>>> Stashed changes
     });
-  }
+  });
 
   // delegation: clicks inside lower reel -> show visualizer info
   if (lowerReelTrack) {
     lowerReelTrack.addEventListener('click', (e) => {
       const card = e.target.closest('.card');
       if (!card) return;
+      // special action cards (present in initial UI) are gated
+      const action = card.dataset.action;
+      if (action === 'open-diagram') {
+        if (window.currentSystem === 'digestivo') {
+          window.open('digestivo.html', '_blank');
+        } else {
+          vizContent.innerHTML = `<p>Seleccione primero 'Digestivo' en la parte superior.</p>`;
+        }
+        return;
+      }
+      if (action === 'open-multimedia') {
+        if (window.currentSystem === 'digestivo') {
+          vizContent.innerHTML = `<p>Multimedia para el sistema digestivo.</p>`;
+        } else {
+          vizContent.innerHTML = `<p>Seleccione primero 'Digestivo' en la parte superior.</p>`;
+        }
+        return;
+      }
+
       const key = card.dataset.key;
       if (key && bones[key]) showInVisualizer(key);
     });
   }
+
+  // Ensure lower reel shows the action cards on initial load (no auto organ list)
+  if (lowerReelTrack) populateLowerReel([]);
 });
