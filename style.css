@@ -35,3 +35,19 @@ body { background: linear-gradient(180deg,#eaf6ff,#eef9ff); display:flex; align-
   .center-area { width: 100%; margin-right: 0; }
   .toolbar { position: static; transform:none; margin-top: -12px; }
 }
+
+/* Ensure inline SVGs injected into the visualizer scale to the container */
+.side-bar.right .viz-content svg {
+  width: 100%;
+  height: auto;
+  max-height: 60vh;
+  display: block;
+}
+
+/* Wrapper for injected SVGs should fill available width */
+.side-bar.right .viz-content #viz-svg-container,
+#svg-container,
+.side-bar.right .viz-content #viz-svg-container svg {
+  width: 100%;
+  height: auto;
+}
