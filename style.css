@@ -28,6 +28,13 @@ body { background: linear-gradient(180deg,#eaf6ff,#eef9ff); display:flex; align-
 .side-bar.right .viz-content h4 { margin:0; color:#07324a; font-size:16px; }
 .side-bar.right .viz-content img { width:100%; height:auto; max-height:60vh; border-radius:8px; display:block; object-fit:contain; }
 
+/* Ensure injected SVGs scale to fit the visualizer or svg container */
+.side-bar.right .viz-content svg,
+#viz-svg-container svg,
+#svg-container svg { width: 100% !important; height: auto !important; max-height: 60vh !important; display: block; }
+
+#svg-container { width: 100%; max-width: 640px; height: auto; }
+
 @media (max-width: 820px) {
   .stage { flex-direction:column; height: auto; gap:12px; }
   .side-bar { width: 90%; transform:none; position: static; }

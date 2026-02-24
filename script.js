@@ -7,16 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // bone data (short examples)
   const bones = {
-<<<<<<< Updated upstream
-    skeleton: { title: 'Skeletal System', text: 'The skeletal system provides structure, protects organs, and enables movement. Major bones include the skull, clavicle, scapula, humerus, femur and more.', img: 'assets/assets/skeleton.png' },
-    skull: { title: 'Skull', text: 'The skull protects the brain and supports the structures of the face.', img: 'https://via.placeholder.com/640x360.png?text=Skull' },
-    clavicle: { title: 'Clavicle', text: 'The clavicle (collarbone) connects the arm to the body, providing structural support.', img: 'https://via.placeholder.com/640x360.png?text=Clavicle' },
-    scapula: { title: 'Scapula', text: 'The scapula (shoulder blade) helps with arm movement and attachment of muscles.', img: 'https://via.placeholder.com/640x360.png?text=Scapula' },
-    humerus: { title: 'Humerus', text: 'The humerus is the long bone in the upper arm between shoulder and elbow.', img: 'https://via.placeholder.com/640x360.png?text=Humerus' },
-    femur: { title: 'Femur', text: 'The femur is the thigh bone and the longest bone in the human body.', img: 'https://via.placeholder.com/640x360.png?text=Femur' }
-=======
     skeleton: { title: 'Sistema Digestivo', text: 'El sistema digestivo es un complejo conjunto de órganos encargados del proceso de la digestión; es decir, la transformación de los alimentos para que puedan ser absorbidos y utilizados por las células del organismo', img: 'assets/assets/digestivo.svg' }
->>>>>>> Stashed changes
   };
 
   reels.forEach(reel => {
@@ -116,22 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
       c.style.cursor = 'pointer';
       c.onclick = (ev) => {
         const key = c.dataset.key;
-<<<<<<< Updated upstream
-        if (key && bones[key]) showInVisualizer(key);
-        ev.stopPropagation();
-=======
         if (key) {
           handleCardKey(key);
           ev.stopPropagation();
         }
         // if no data-key (action cards), allow event to bubble to delegation handler
->>>>>>> Stashed changes
       };
     });
   }
 
-<<<<<<< Updated upstream
-=======
   // Local fallback data when API is unavailable (editable)
   window.localOrganList = [
     { key: 'SD_estomago', label: 'Estómago' },
@@ -266,14 +250,71 @@ document.addEventListener('DOMContentLoaded', () => {
     if (items.length) populateLowerReel(items);
   }
 
->>>>>>> Stashed changes
   // Show bone info in visualizer
   function showInVisualizer(key) {
+    const svgContainer = document.getElementById("svg-container")
+    
     const info = bones[key];
     if (!info) return;
-    // Try to load the image; if it fails, fall back to placeholder
+    
+    // If the resource is an inline SVG, embed it and wire interactivity like svgloader.js
     const placeholder = 'https://via.placeholder.com/640x360.png?text=No+Image';
     const imgSrc = info.img || placeholder;
+
+    const isSvg = typeof imgSrc === 'string' && imgSrc.toLowerCase().endsWith('.svg');
+
+    if (isSvg) {
+      // prepare a wrapper where the SVG will be injected
+      vizContent.innerHTML = `<h4>${info.title}</h4><p>${info.text}</p><div id="viz-svg-container"></div>`;
+      const wrapperId = 'viz-svg-container';
+
+      // If svgloader.js is loaded in the page, prefer its helper
+      if (typeof window.cargarEInteractuar === 'function') {
+        try {
+          window.cargarEInteractuar(imgSrc, wrapperId);
+        } catch (err) {
+          console.error('Error usando cargarEInteractuar:', err);
+        }
+        return;
+      }
+
+      // Fallback: fetch and inject SVG, then attach click handlers (behaviour like svgloader.js)
+      fetch(imgSrc).then(r => r.text()).then(svgText => {
+        const container = document.getElementById(wrapperId);
+        if (!container) return;
+        container.innerHTML = svgText;
+
+        const organos = container.querySelectorAll('[id^="SD_"]');
+        organos.forEach(elemento => {
+          elemento.style.cursor = 'pointer';
+          elemento.addEventListener('click', async () => {
+            const idActivo = elemento.id;
+            try {
+              const res = await fetch(`http://localhost:3000/api/organo/${idActivo}`);
+              const data = await res.json();
+              if (!data.error) {
+                if (typeof window.procesarInformacion === 'function') {
+                  window.procesarInformacion(idActivo, data);
+                } else {
+                  alert(`Órgano: ${data.nombre}\nInfo: ${data.descripcion}`);
+                }
+              } else {
+                console.warn('Este elemento no tiene descripción en la BD.');
+              }
+            } catch (err) {
+              console.error('Error conectando con la API:', err);
+            }
+          });
+        });
+      }).catch(err => {
+        console.error('Error cargando SVG para visualizador:', err);
+        vizContent.innerHTML = `\n        <h4>${info.title}</h4>\n        <p>${info.text}</p>\n        <img src="${placeholder}" alt="${info.title}">\n      `;
+      });
+
+      return;
+    }
+
+    // Non-SVG image fallback (existing behavior)
     const img = new Image();
     img.src = imgSrc;
     img.alt = info.title || '';
@@ -289,23 +330,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-<<<<<<< Updated upstream
-  // when first card on upper reel is clicked, populate lower reel with bones
-  const topFirst = document.querySelector('#reel1 .reel-track .card');
-  if (topFirst) {
-    topFirst.style.cursor = 'pointer';
-    topFirst.addEventListener('click', () => {
-      const boneItems = [
-        { key: 'skull', label: 'Skull' },
-        { key: 'clavicle', label: 'Clavicle' },
-        { key: 'scapula', label: 'Scapula' },
-        { key: 'humerus', label: 'Humerus' },
-        { key: 'femur', label: 'Femur' }
-      ];
-      populateLowerReel(boneItems);
-      // also show a general skeleton overview in the visualizer
-      showInVisualizer('skeleton');
-=======
   // Upper reel: track which system is selected. Special lower-reel actions are gated
   // but the lower reel should always show the action cards (they persist).
   let currentSystem = null;
@@ -324,7 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // show a simple message for other systems; keep lower reel intact
         if (vizContent) vizContent.innerHTML = `<p>Sistema seleccionado: ${card.textContent.trim()}.</p>`;
       }
->>>>>>> Stashed changes
     });
   });
 
@@ -353,7 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const key = card.dataset.key;
-      if (key && bones[key]) showInVisualizer(key);
+      if (!key) return;
+      handleCardKey(key);
     });
   }
 
