@@ -1,3 +1,5 @@
+let previousSelected = null;
+
 async function cargarEInteractuar(url, contenedorId) {
     try {
         const respuesta = await fetch(url);
@@ -10,17 +12,17 @@ async function cargarEInteractuar(url, contenedorId) {
 
         organos.forEach(elemento => {
             elemento.style.cursor = "pointer";
-            
-            elemento.addEventListener('click', async () => {
+
+            elemento.addEventListener('click', async (ev) => {
                 const idActivo = elemento.id;
-                
-                // CONSULTA DINÁMICA A LA BD
+
+                // Consulta dinámica a la API para obtener información del órgano
                 try {
                     const res = await fetch(`http://localhost:3000/api/organo/${idActivo}`);
                     const data = await res.json();
 
                     if (!data.error) {
-                        procesarInformacion(idActivo, data);
+                        aplicarSeleccion(elemento, idActivo, data);
                     } else {
                         console.warn("Este elemento no tiene descripción en la BD.");
                     }
@@ -35,9 +37,32 @@ async function cargarEInteractuar(url, contenedorId) {
     }
 }
 
-function procesarInformacion(id, data) {
-    // Aquí puedes abrir un modal, cambiar un texto lateral, etc.
-    alert(`Órgano: ${data.nombre}\nInfo: ${data.descripcion}`);
+function aplicarSeleccion(elemento, id, data) {
+    // Quitar selección previa
+    if (previousSelected && previousSelected !== elemento) {
+        previousSelected.classList.remove('organ-active');
+    }
+
+    // Alternar selección
+    const isActive = elemento.classList.toggle('organ-active');
+    previousSelected = isActive ? elemento : null;
+
+    // Actualizar panel lateral con la información recibida
+    const nameEl = document.getElementById('org-name');
+    const descEl = document.getElementById('org-desc');
+    const infoCard = document.getElementById('info-card');
+
+    if (nameEl) nameEl.textContent = data.nombre || id;
+    if (descEl) descEl.textContent = data.descripcion || 'No hay descripción disponible.';
+
+    // Pequeña animación en el panel para enfatizar el cambio
+    if (infoCard) {
+        infoCard.animate([
+            { transform: 'translateY(6px)', opacity: 0.96 },
+            { transform: 'translateY(0)', opacity: 1 }
+        ], { duration: 220, easing: 'ease-out' });
+    }
 }
 
+// Iniciar carga
 cargarEInteractuar('/assets/digestivo.svg', 'svg-container');
