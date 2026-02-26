@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Diagrama Digestivo</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <div class="stage">
+            <div class="center-area">
+                <div class="content-card">
+                    <h1>Diagrama Expandido</h1>
+<<<<<<< Updated upstream
+                    <div id="svg-container" style="width: 100%; max-width: 640px; height: auto;"></div>
+=======
+                    <div id="svg-container" style="width: 640px; height: 480px;"></div>
+>>>>>>> Stashed changes
+                </div>
+            </div>
+
+            <div class="side-bar right">
+                <div class="visualizer">
+                    <h3>Información</h3>
+                    <div class="viz-content">
+<<<<<<< Updated upstream
+                        <p>Seleccione un organo.</p>
+=======
+                        <p>Descripción y controles para el diagrama digestivo.</p>
+>>>>>>> Stashed changes
+                        <a href="index.html" class="card">Volver al Inicio</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <script src="svgloader.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof cargarEInteractuar === 'function') {
+                    cargarEInteractuar('assets/assets/digestivo.svg', 'svg-container');
+                }
+            });
+        </script>
+        <script src="script.js"></script>
+    </body>
+</html>
