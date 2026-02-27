@@ -1,12 +1,12 @@
 const express = require('express');
 const mysql = require('mysql2');
-const cors = require('cors'); // 1. Importar cors
+const cors = require('cors');
+
 const app = express();
+app.use(cors());
+app.use(express.json());
 
-// 2. Habilitar CORS para todas las rutas
-// Esto añade la cabecera 'Access-Control-Allow-Origin' automáticamente
-app.use(cors()); 
-
+// Configuración de la conexión
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -14,20 +14,33 @@ const db = mysql.createConnection({
     database: 'anatomia_db'
 });
 
-app.get('/api/organo/:id', (req, res) => {
-    const idSvg = req.params.id;
-    const query = 'SELECT nombre, descripcion FROM sistema_digestivo WHERE id_svg = ?';
+// Endpoint Dinámico: /api/:sistema/:id
+// Ejemplo: /api/sistema_oseo/femur_01
+app.get('/api/:sistema/:id', (req, res) => {
+    const { sistema, id } = req.params;
+
+    // Nombres exactos de las tablas en tu anatomia_db.sql
+    const tablasPermitidas = ['sistema_digestivo', 'sistema_respiratorio'];
+
+    if (!tablasPermitidas.includes(sistema)) {
+        return res.status(400).send("Sistema no válido");
+    }
+
+    // Usamos id_svg porque es la columna UNIQUE en tu SQL
+    const query = `SELECT nombre, descripcion FROM ${sistema} WHERE id_svg = ?`;
     
-    db.execute(query, [idSvg], (err, results) => {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        // Si no hay resultados, enviamos un objeto vacío o un error 404
+    db.execute(query, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
         if (results.length === 0) {
-            return res.status(404).json({ error: "No encontrado en la BD" });
+            return res.status(404).json({ error: "No encontrado" });
         }
         res.json(results[0]);
     });
 });
 
-app.listen(3000, () => console.log('Servidor API listo en puerto 3000'));
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Rutas disponibles: /api/sistema_digestivo/:id, /api/sistema_oseo/:id, etc.`);
+});

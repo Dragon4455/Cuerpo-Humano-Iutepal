@@ -1,9 +1,9 @@
 const sistemas = [
-    { nombre: "Esquelético", color: "#f8fafc", desc: "Soporte óseo y protección de órganos vitales.", img:"/static/esqueletico.svg.jpeg", url: "digestivo.html" },
+    { nombre: "Esquelético", color: "#f8fafc", desc: "Soporte óseo y protección de órganos vitales.", img:"/static/esqueletico.svg.jpeg", },
     { nombre: "Muscular", color: "#f43f5e", desc: "Permite el movimiento voluntario e involuntario.", img: "URL_DE_TU_IMAGEN_2" },
     { nombre: "Cardiovascular", color: "#ef4444", desc: "Transporte de nutrientes y oxígeno vía sanguínea.", img: "URL_DE_TU_IMAGEN_3" },
     { nombre: "Digestivo", color: "#fbbf24", desc: "Procesamiento de alimentos y absorción de energía.", img: "/assets/digestivo.svg", url: "digestivo.html" },
-    { nombre: "Respiratorio", color: "#06b6d4", desc: "Intercambio de gases en los alvéolos pulmonares.", img: "URL_DE_TU_IMAGEN_5" },
+    { nombre: "Respiratorio", color: "#06b6d4", desc: "Intercambio de gases en los alvéolos pulmonares.", img: "URL_DE_TU_IMAGEN_5",  url: "respiratorio.html"},
     { nombre: "Endocrino", color: "#a855f7", desc: "Regulación química mediante hormonas.", img: "URL_DE_TU_IMAGEN_6" },
     { nombre: "Urinario", color: "#10b981", desc: "Excreción de desechos y equilibrio electrolítico.", img: "URL_DE_TU_IMAGEN_7" },
     { nombre: "Linfático", color: "#22c55e", desc: "Sistema inmunitario y drenaje de líquidos.", img: "URL_DE_TU_IMAGEN_8" },
