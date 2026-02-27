@@ -122,3 +122,94 @@ header p { color: #64748b; font-size: 0.7rem; letter-spacing: 2px; margin-top: 1
     0% { transform: rotateY(0deg); }
     100% { transform: rotateY(360deg); }
 }
+/* Contenedor principal de la galería */
+#galeria-imagenes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+/* Estilo de cada imagen */
+.img-galeria {
+    width: 150px;
+    height: 150px;
+    object-fit: cover; /* Recorta la imagen para que sea cuadrada sin deformarse */
+    border-radius: 12px;
+    border: 3px solid #f0f0f0;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Efecto Hover (al pasar el mouse) */
+.img-galeria:hover {
+    transform: scale(1.1); /* Zoom ligero */
+    border-color: #3498db; /* Cambia el color del borde */
+    box-shadow: 0 8px 15px rgba(52, 152, 219, 0.3);
+    z-index: 10;
+}
+
+/* Estilo para cuando no hay imágenes (opcional) */
+#galeria-imagenes:empty::after {
+    content: "No hay imágenes adicionales para este órgano.";
+    color: #888;
+    font-style: italic;
+    font-size: 0.9em;
+}
+/* El Modal (fondo oscuro) */
+
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 2000; /* Asegura que esté por encima de todo */
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.95); /* Un poco más oscuro para resaltar */
+    
+    /* CENTRADO FLEXBOX */
+    display: none; /* Se cambia a 'flex' vía JS */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Imagen dentro del Modal */
+.modal-contenido {
+    max-width: 90%; /* No se sale de los lados en móviles */
+    max-height: 80vh; /* No se sale por arriba/abajo */
+    border: 4px solid white;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.5);
+    animation: zoomIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+/* Animación de entrada */
+@keyframes zoomIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Botón de cerrar flotante */
+.cerrar-modal {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 50px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* Texto debajo de la imagen */
+#caption-modal {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-top: 15px;
+    font-family: sans-serif;
+    text-shadow: 2px 2px 4px #000;
+}

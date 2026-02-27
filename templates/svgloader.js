@@ -65,6 +65,39 @@ function aplicarSeleccion(elemento, id, data) {
 
     if (nameEl) nameEl.textContent = data.nombre || id;
     if (descEl) descEl.textContent = data.descripcion || 'No hay descripción disponible.';
+    const contenedorGaleria = document.getElementById('galeria-imagenes');
+    contenedorGaleria.innerHTML = ''; // Limpiar imágenes anteriores
+    // Referencias al Modal
+    const modal = document.getElementById('modal-imagen');
+    const imgModal = document.getElementById('img-expandida');
+    const captionText = document.getElementById('caption-modal');
+ 
+
+
+    if (data.imagenes && data.imagenes.length > 0) {
+        data.imagenes.forEach(img => {
+          const elImg = document.createElement('img');
+            elImg.src = img.url_imagen;
+            elImg.className = "img-galeria";
+            
+            // EVENTO PARA EXPANDIR
+           elImg.onclick = function() {
+           modal.style.display = "flex"; // Usamos flex para activar el centrado de CSS
+           imgModal.src = this.src;
+           captionText.innerHTML = img.descripcion_imagen;
+}
+            contenedorGaleria.appendChild(elImg);
+        });
+        document.querySelector('.cerrar-modal').onclick = () => {
+        modal.style.display = "none";
+    };
+    modal.onclick = function(e) {
+    if (e.target === modal) {
+        modal.style.display = "none";
+    }
+}
+    }
+   
 
     // Pequeña animación en el panel para enfatizar el cambio
     if (infoCard) {
@@ -74,7 +107,6 @@ function aplicarSeleccion(elemento, id, data) {
         ], { duration: 220, easing: 'ease-out' });
     }
 }
-
 
 
 // function procesarInformacion(id, data) {

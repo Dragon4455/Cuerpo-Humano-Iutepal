@@ -25,8 +25,15 @@
             <p id="org-desc">Haz clic en una parte del diagrama a la izquierda para ver su nombre y descripción aquí. También verás un borde y efecto neón en el órgano seleccionado.</p>
             <div style="margin-top:12px; font-size:0.9rem; color:#89c0bd;">Sugerencia: intenta hacer clic en el texto de los organos.</div>
         </aside>
-    </div>
+        <article id="galeria-imagenes">
 
+        </article>
+    </div>
+    <div id="modal-imagen" class="modal">
+    <span class="cerrar-modal">&times;</span>
+    <img class="modal-contenido" id="img-expandida">
+    <div id="caption-modal"></div>
+    </div>
     <script src="svgloader.js" type="module"></script>
     <script type="module">
         import{cargarEInteractuar} from "/templates/svgloader.js"
