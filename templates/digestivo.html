@@ -27,6 +27,10 @@
         </aside>
     </div>
 
-    <script src="svgloader.js"></script>
+    <script src="svgloader.js" type="module"></script>
+    <script type="module">
+        import{cargarEInteractuar} from "/templates/svgloader.js"
+        cargarEInteractuar("/assets/digestivo.svg","sistema_digestivo", 'svg-container')
+    </script>
 </body>
 </html>

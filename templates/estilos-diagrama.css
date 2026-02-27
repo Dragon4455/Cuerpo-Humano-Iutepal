@@ -75,7 +75,7 @@
 }
 
 /* Transición suave para todos los elementos SVG interactivos */
-[id^="SD_"] { transition: transform 200ms ease, opacity 180ms ease; cursor: pointer; }
+[id^="S"] { transition: transform 200ms ease, opacity 180ms ease; cursor: pointer; }
 
 @media (max-width: 920px) {
     .page-wrap { flex-direction: column; width: calc(100vw - 24px); margin: 18px auto; }

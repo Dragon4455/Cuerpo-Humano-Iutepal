@@ -42,5 +42,5 @@ app.get('/api/:sistema/:id', (req, res) => {
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`Rutas disponibles: /api/sistema_digestivo/:id, /api/sistema_oseo/:id, etc.`);
+    console.log(`Rutas disponibles: /api/sistema_digestivo/:id, /api/sistema_respiratorio/:id, etc.`);
 });
