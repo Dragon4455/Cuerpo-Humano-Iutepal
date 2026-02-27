@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sistema Digestivo — Interactivo</title>
+    <link rel="stylesheet" href="sis.css">
+    <link rel="stylesheet" href="estilos-diagrama.css">
+</head>
+<body>
+
+    <div class="page-wrap">
+        <main class="diagram-card">
+            <a href="sis.html" class="back-btn" title="Volver" aria-label="Volver al índice">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6" stroke="#071029" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+            <div id="svg-container" aria-label="Diagrama sistema digestivo"></div>
+        </main>
+
+        <aside class="info-card" id="info-card" aria-live="polite">
+            <div class="info-meta">Sistema Digestivo</div>
+            <h2 id="org-name">Selecciona un órgano</h2>
+            <p id="org-desc">Haz clic en una parte del diagrama a la izquierda para ver su nombre y descripción aquí. También verás un borde y efecto neón en el órgano seleccionado.</p>
+            <div style="margin-top:12px; font-size:0.9rem; color:#89c0bd;">Sugerencia: intenta hacer clic en el estómago, hígado o intestinos.</div>
+        </aside>
+    </div>
+
+    <script src="svgloader.js" type="module"></script>
+    <script type="module">
+        import{cargarEInteractuar} from "/templates/svgloader.js"
+        cargarEInteractuar("/assets/digestivo.svg","sistema_digestivo", 'svg-container')
+    </script>
+</body>
+</html>
