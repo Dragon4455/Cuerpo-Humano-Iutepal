@@ -41,7 +41,7 @@ const db = mysql.createConnection({
 // Ejemplo: /api/sistema_oseo/femur_01
 app.get('/api/:sistema/:id', async (req, res) => {
     const { sistema, id } = req.params;
-    const tablasPermitidas = ['sistema_digestivo', 'sistema_respiratorio'];
+    const tablasPermitidas = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario'];
 
     if (!tablasPermitidas.includes(sistema)) {
         return res.status(400).send("Sistema no válido");
@@ -50,7 +50,7 @@ app.get('/api/:sistema/:id', async (req, res) => {
     try {
         // 1. Obtener datos básicos del órgano
         const [organo] = await db.promise().execute(
-            `SELECT nombre, descripcion, iframe_url FROM ${sistema} WHERE id_svg = ?`, 
+            `SELECT nombre, descripcion FROM ${sistema} WHERE id_svg = ?`, 
             [id]
         );
 
@@ -129,3 +129,24 @@ app.listen(PORT, () => {
     console.log(`✅ Servidor corriendo en http://localhost:${PORT}`);
     console.log(`Rutas disponibles: /api/sistema_digestivo/:id, /api/sistema_respiratorio/:id, etc.`);
 });
+//SQL para la tabla
+// //CREATE TABLE IF NOT EXISTS sistema_oseo (
+//     id INT(11) NOT NULL AUTO_INCREMENT,
+//     id_svg VARCHAR(50) NOT NULL,
+//     nombre VARCHAR(100) NOT NULL,
+//     descripcion TEXT NULL DEFAULT NULL,
+//     fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+//     PRIMARY KEY (id),
+//     UNIQUE KEY (id_svg) -- ESTO ES LO IMPORTANTE: Evita duplicados por código SVG
+// ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+// -- Ejemplo para otra tabla (Sistema Muscular)
+// CREATE TABLE IF NOT EXISTS sistema_muscular (
+//     id INT(11) NOT NULL AUTO_INCREMENT,
+//     id_svg VARCHAR(50) NOT NULL,
+//     nombre VARCHAR(100) NOT NULL,
+//     descripcion TEXT NULL DEFAULT NULL,
+//     fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP() ON UPDATE CURRENT_TIMESTAMP(),
+//     PRIMARY KEY (id),
+//     UNIQUE KEY (id_svg)
+// ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
