@@ -65,7 +65,7 @@
 .info-meta { font-size: 0.85rem; color: #7eaab0; }
 
 /* Clase que se añade al órgano seleccionado (efecto neon/animación) */
-.organ-active {
+.selected-organ {
     transition: transform 220ms ease, filter 220ms ease, stroke 220ms ease;
     transform-origin: center center;
     transform: scale(1.03);
