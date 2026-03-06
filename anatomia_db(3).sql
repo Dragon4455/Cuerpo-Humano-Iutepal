@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 27-02-2026 a las 03:19:37
+-- Tiempo de generación: 06-03-2026 a las 03:01:47
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -67,7 +67,7 @@ INSERT INTO `sistema_digestivo` (`id`, `id_svg`, `nombre`, `descripcion`, `fecha
 (2, 'SD_Lengua', 'Lengua', 'Órgano muscular situado en el suelo de la boca que sirve para gustar y deglutir.', '2026-02-19 23:08:34', NULL),
 (3, 'SD_Diente', 'Diente', 'Cuerpo duro que nace en las encías y sirve para masticar los alimentos.', '2026-02-19 23:08:34', NULL),
 (4, 'SD_Boca', 'Boca', 'Puerta de entrada donde comienza la digestión mecánica (masticación).', '2026-02-19 23:20:23', NULL),
-(6, 'SD_Paladar', 'Paladar', 'Techo de la boca que separa la cavidad bucal de la nasal.', '2026-02-19 23:22:57', NULL),
+(6, 'SD_Paladar', 'Paladar', 'Techo de la boca que separa la cavidad bucal de la nasal. (test)', '2026-03-05 18:15:29', NULL),
 (7, 'SD_Uvula', 'Úvula', 'Pequeño tejido que ayuda a evitar que la comida suba a la nariz al tragar.', '2026-02-19 23:22:57', NULL),
 (8, 'SD_Esofago', 'Esófago', 'Tubo muscular que transporta el bolo alimenticio hacia el estómago mediante movimientos rítmicos.', '2026-02-19 23:24:22', NULL),
 (9, 'SD_Estomago', 'Estómago', 'Bolsa muscular que mezcla la comida con ácidos gástricos para descomponerla.', '2026-02-19 23:32:52', NULL),
@@ -97,6 +97,52 @@ INSERT INTO `sistema_digestivo` (`id`, `id_svg`, `nombre`, `descripcion`, `fecha
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `sistema_oseo`
+--
+
+CREATE TABLE `sistema_oseo` (
+  `id` int(11) NOT NULL,
+  `id_svg` varchar(50) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `sistema_oseo`
+--
+
+INSERT INTO `sistema_oseo` (`id`, `id_svg`, `nombre`, `descripcion`, `fecha_actualizacion`) VALUES
+(2, 'SO_Craneo', 'Craneo', 'hola soy Sans. Mira\r\n\r\neeeeeeeeeeeeeeeeeeeeeeeee', '2026-03-06 01:29:35'),
+(4, 'SO_Manubrio', 'Manubrio', '', '2026-03-06 01:15:30'),
+(7, 'SO_Costilla', 'Costilla', '', '2026-03-06 01:15:42'),
+(11, 'SO_Radio', 'Radio', '', '2026-03-06 01:16:04'),
+(12, 'SO_Pelvis', 'Pelvis', '', '2026-03-06 01:16:07'),
+(13, 'SO_Carpos', 'Carpos', '', '2026-03-06 01:16:12'),
+(14, 'SO_Metacarpos', 'Metacarpos', '', '2026-03-06 01:16:16'),
+(15, 'SO_Falanges', 'Falanges', '', '2026-03-06 01:16:21'),
+(18, 'SO_Tibia', 'Tibia', '', '2026-03-06 01:16:34'),
+(20, 'SO_Tarsos', 'Tarsos', '', '2026-03-06 01:16:42'),
+(21, 'SO_Metatarsos', 'Metatarsos', '', '2026-03-06 01:16:46'),
+(23, 'SO_Sacro', 'Sacro', '', '2026-03-06 01:16:57'),
+(24, 'SO_VertebrasLum', 'Vértebras Lumbares', '', '2026-03-06 01:17:12'),
+(25, 'SO_Coccix', 'Cóccix', '', '2026-03-06 01:17:19'),
+(27, 'SO_VertebrasTor', 'Vértebras Torácicas', '', '2026-03-06 01:17:41'),
+(28, 'SO_VertebrasCer', 'Vértebras Cervicales', '', '2026-03-06 01:17:53'),
+(29, 'SO_Columna', 'Columna Vertebral', '', '2026-03-06 01:18:01'),
+(30, 'SO_Escapula', 'Escápula', '', '2026-03-06 01:18:15'),
+(31, 'SO_Clavicula', 'Clavícula', '', '2026-03-06 01:18:20'),
+(32, 'SO_Esternon', 'Esternón', '', '2026-03-06 01:18:27'),
+(33, 'SO_Humero', 'Húmero', '', '2026-03-06 01:18:33'),
+(34, 'SO_Cubito', 'Cúbito', '', '2026-03-06 01:18:40'),
+(35, 'SO_Femur', 'Fémur', '', '2026-03-06 01:18:50'),
+(36, 'SO_Rotula', 'Rótula', '', '2026-03-06 01:18:56'),
+(37, 'SO_Perone', 'Peroné', '', '2026-03-06 01:19:03'),
+(41, 'SO_Mandibula', 'Mandibula', 'prueba', '2026-03-06 01:24:54');
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `sistema_respiratorio`
 --
 
@@ -114,7 +160,23 @@ CREATE TABLE `sistema_respiratorio` (
 --
 
 INSERT INTO `sistema_respiratorio` (`id`, `id_svg`, `nombre`, `descripcion`, `fecha_actualizacion`, `iframe_url`) VALUES
-(1, 'SR_Nariz', 'Nariz', 'Es la entrada principal del aire al sistema respiratorio.', '2026-02-26 23:58:52', NULL);
+(1, 'SR_Nariz', 'Nariz', 'Es la entrada principal del aire al sistema respiratorio. prueba\n', '2026-03-06 01:21:41', NULL),
+(2, 'SR_CavidadNas', 'Cavidad Nasal', 'Prueba', '2026-03-06 00:42:12', NULL),
+(3, 'SR_Traquea', 'Traquea', 'a', '2026-03-06 01:02:41', NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `sistema_tegumentario`
+--
+
+CREATE TABLE `sistema_tegumentario` (
+  `id` int(11) NOT NULL,
+  `id_svg` varchar(50) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Índices para tablas volcadas
@@ -134,9 +196,24 @@ ALTER TABLE `sistema_digestivo`
   ADD UNIQUE KEY `id_svg` (`id_svg`);
 
 --
+-- Indices de la tabla `sistema_oseo`
+--
+ALTER TABLE `sistema_oseo`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `id_svg_2` (`id_svg`),
+  ADD KEY `id_svg` (`id_svg`);
+
+--
 -- Indices de la tabla `sistema_respiratorio`
 --
 ALTER TABLE `sistema_respiratorio`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `id_svg` (`id_svg`);
+
+--
+-- Indices de la tabla `sistema_tegumentario`
+--
+ALTER TABLE `sistema_tegumentario`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_svg` (`id_svg`);
 
@@ -148,19 +225,31 @@ ALTER TABLE `sistema_respiratorio`
 -- AUTO_INCREMENT de la tabla `organos_imagenes`
 --
 ALTER TABLE `organos_imagenes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `sistema_digestivo`
 --
 ALTER TABLE `sistema_digestivo`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
+
+--
+-- AUTO_INCREMENT de la tabla `sistema_oseo`
+--
+ALTER TABLE `sistema_oseo`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT de la tabla `sistema_respiratorio`
 --
 ALTER TABLE `sistema_respiratorio`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT de la tabla `sistema_tegumentario`
+--
+ALTER TABLE `sistema_tegumentario`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
