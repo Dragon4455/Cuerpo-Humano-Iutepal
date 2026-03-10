@@ -19,8 +19,11 @@
   },
   "homepage": "https://github.com/Dragon4455/Cuerpo-Humano-Iutepal#readme",
   "dependencies": {
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "multer-storage-cloudinary": "^4.0.0",
     "mysql2": "^3.18.2"
   }
 }

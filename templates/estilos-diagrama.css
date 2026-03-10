@@ -65,17 +65,16 @@
 .info-meta { font-size: 0.85rem; color: #7eaab0; }
 
 /* Clase que se añade al órgano seleccionado (efecto neon/animación) */
-.organ-active {
+.selected-organ {
     transition: transform 220ms ease, filter 220ms ease, stroke 220ms ease;
     transform-origin: center center;
-    transform: scale(1.03);
     filter: drop-shadow(0 0 16px rgba(0,240,200,0.85)) saturate(1.2) contrast(1.05);
     stroke: #00f4d9 !important;
     stroke-width: 2px !important;
 }
 
 /* Transición suave para todos los elementos SVG interactivos */
-[id^="SD_"] { transition: transform 200ms ease, opacity 180ms ease; cursor: pointer; }
+[id^="S"] { transition: transform 200ms ease, opacity 180ms ease; cursor: pointer; }
 
 @media (max-width: 920px) {
     .page-wrap { flex-direction: column; width: calc(100vw - 24px); margin: 18px auto; }
