@@ -1,0 +1,15 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.iutepal.anatomia
+productName: Enciclopedia Anatómica
+files:
+  - filter:
+      - '**/*'
+      - '!dist/**'
+      - '!build/**'
+      - '!*.md'
+      - '!import.js'
+win:
+  target: nsis
+electronVersion: 41.0.1

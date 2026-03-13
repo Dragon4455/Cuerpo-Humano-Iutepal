@@ -2,8 +2,10 @@
   "name": "cuerpo-humano-iutepal",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -19,11 +21,37 @@
   },
   "homepage": "https://github.com/Dragon4455/Cuerpo-Humano-Iutepal#readme",
   "dependencies": {
+    "axios": "^1.13.6",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "is-online": "^12.0.2",
     "multer": "^2.1.1",
     "multer-storage-cloudinary": "^4.0.0",
-    "mysql2": "^3.18.2"
+    "mysql2": "^3.18.2",
+    "sqlite3": "^6.0.1",
+    "axios": "^1.7.9"
+  },
+  "devDependencies": {
+    "electron": "^41.0.1",
+    "electron-builder": "^26.8.1"
+  },
+  "build": {
+    "appId": "com.iutepal.anatomia",
+    "productName": "Enciclopedia Anatómica",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!build/**",
+      "!*.md",
+      "!import.js",
+      "!update_urls.js"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   }
 }
