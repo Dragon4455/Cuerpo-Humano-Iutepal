@@ -41,6 +41,12 @@ window.abrirVisor = function(url, nombreOrgano) {
  * FUNCIÓN PRINCIPAL: CARGA DEL SVG
  */
 export async function cargarEInteractuar(url, sistema, contenedorId) {
+    // Si no hay sesión, redirigir al login
+    if (localStorage.getItem('appLoggedIn') !== 'true') {
+        window.location.href = '/login.html';
+        return;
+    }
+
     try {
         const respuesta = await fetch(url);
         const codigoSvg = await respuesta.text();
@@ -84,13 +90,18 @@ function aplicarSeleccion(elemento, id, data) {
         data.imagenes.forEach(img => {
             const urlBase = img.url_imagen;
             const esVideo = urlBase.toLowerCase().match(/\.(mp4|webm|mov)$/) || urlBase.includes('/video/upload/');
+            const esCloudinary = urlBase.includes('cloudinary.com');
 
-            // --- TRUCO DE CLOUDINARY PARA VIDEOS ---
-            // Si es video, cambiamos la extensión a .jpg para que Cloudinary nos dé un frame (miniatura)
-            // Además aplicamos recorte cuadrado 150x150
-            let urlMiniatura = urlBase.replace('/upload/', '/upload/f_auto,q_auto,w_150,h_150,c_fill/');
-            if (esVideo) {
-                urlMiniatura = urlMiniatura.replace(/\.[^/.]+$/, ".jpg");
+            // Solo aplicar transformaciones de Cloudinary si es una URL de Cloudinary
+            let urlMiniatura = urlBase;
+            if (esCloudinary) {
+                // --- TRUCO DE CLOUDINARY PARA VIDEOS ---
+                // Si es video, cambiamos la extensión a .jpg para que Cloudinary nos dé un frame (miniatura)
+                // Además aplicamos recorte cuadrado 150x150
+                urlMiniatura = urlBase.replace('/upload/', '/upload/f_auto,q_auto,w_150,h_150,c_fill/');
+                if (esVideo) {
+                    urlMiniatura = urlMiniatura.replace(/\.[^/.]+$/, ".jpg");
+                }
             }
 
             // 1. Crear elemento para la GALERÍA DE VISTA (Siempre será una IMG ahora)
@@ -98,6 +109,10 @@ function aplicarSeleccion(elemento, id, data) {
             imgMiniatura.src = urlMiniatura;
             imgMiniatura.className = "img-galeria";
             imgMiniatura.style.cursor = "zoom-in";
+            imgMiniatura.onerror = () => {
+                console.error('Error cargando imagen:', urlMiniatura);
+                imgMiniatura.src = '/static/placeholder.jpg'; // Placeholder si falla
+            };
             
             // Si es video, le ponemos un icono visual encima o un borde diferente (opcional)
             if (esVideo) imgMiniatura.style.border = "2px solid #89c0bd";
@@ -112,7 +127,7 @@ function aplicarSeleccion(elemento, id, data) {
                 itemEdit.style.cssText = "position:relative; display:inline-block; margin:5px;";
                 itemEdit.innerHTML = `
                     <div style="width:60px; height:60px; overflow:hidden; border-radius:4px; border:1px solid #89c0bd;">
-                        <img src="${urlMiniatura}" style="width:100%; height:100%; object-fit:cover;">
+                        <img src="${urlMiniatura}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/static/placeholder.jpg'">
                         ${esVideo ? '<div style="position:absolute; bottom:2px; right:2px; font-size:10px;">🎬</div>' : ''}
                     </div>
                     <button type="button" onclick="window.eliminarImagen(${img.id})" 
@@ -136,6 +151,13 @@ function configurarFormularioCRUD() {
     const editContainer = document.getElementById('edit-container');
     const crudForm = document.getElementById('crud-form');
 
+    // Si no es administrador, ocultamos el modo edición y no permitimos acciones de CRUD
+    const isAdmin = localStorage.getItem('appRole') === 'admin';
+    if (!isAdmin) {
+        if (btnToggle) btnToggle.style.display = 'none';
+        if (editContainer) editContainer.style.display = 'none';
+    }
+
     if (btnToggle) {
         btnToggle.onclick = () => {
             if (!document.getElementById('edit-id-svg').value) return alert("Selecciona un órgano.");
@@ -152,12 +174,21 @@ function configurarFormularioCRUD() {
             const btn = crudForm.querySelector('button[type="submit"]');
             btn.disabled = true;
             try {
-                const res = await fetch('http://localhost:3000/api/admin/organo', {
+                const headers = {};
+                if (isAdmin) headers['x-role'] = 'admin';
+                const res = await fetch('/api/admin/organo', {
                     method: 'POST',
+                    headers,
                     body: new FormData(crudForm)
                 });
                 if (res.ok) location.reload();
+                else {
+                    const data = await res.json();
+                    console.error('Error:', data);
+                    alert(data.error || 'No se pudo guardar');
+                }
             } catch (err) { console.error(err); }
+            finally { btn.disabled = false; }
         };
     }
 }

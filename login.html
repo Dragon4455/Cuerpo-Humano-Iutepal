@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acceso | Enciclopedia Anatómica Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="login-modal">
+        <div class="login-tabs">
+            <button id="tab-login" class="login-tab active">Acceso al Sistema</button>
+        </div>
+        
+        <div class="role-switch">
+            <button id="role-admin" class="role-btn active">Administrador</button>
+            <button id="role-guest" class="role-btn">Invitado</button>
+        </div>
+
+        <form id="form-login" class="login-form">
+            <div id="admin-login-fields">
+                <div class="input-group">
+                    <label for="admin-user">Usuario</label>
+                    <input type="text" id="admin-user" name="admin-user" autocomplete="username">
+                </div>
+                <div class="input-group">
+                    <label for="admin-pass">Contraseña</label>
+                    <input type="password" id="admin-pass" name="admin-pass" autocomplete="current-password">
+                </div>
+            </div>
+
+            <div id="guest-info-msg" style="display:none; text-align: center; color: #94a3b8; margin: 10px 0;">
+                <p>Entrarás como invitado con permisos de solo lectura.</p>
+            </div>
+
+            <div class="login-actions">
+                <button type="submit" class="login-btn">Entrar como <span id="btn-text">Admin</span></button>
+            </div>
+            <div id="login-error" class="error-msg" style="display:none;"></div>
+        </form>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html>

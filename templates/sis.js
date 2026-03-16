@@ -1,3 +1,9 @@
+// Comprobación de login
+const role = localStorage.getItem('appRole');
+if (!role) {
+    window.location.href = '/login.html';
+}
+
 const sistemas = [
     { nombre: "Esquelético", color: "#f8fafc", desc: "Soporte óseo y protección de órganos vitales.", img:"/static/sistemaesqueletico.png", url: "oseo.html"},
     { nombre: "Muscular", color: "#f43f5e", desc: "Permite el movimiento voluntario e involuntario.", img: "/static/sistemamusculo.png" },

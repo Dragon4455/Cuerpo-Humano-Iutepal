@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const mysql = require('mysql2/promise');
 const isOnline = require('is-online');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
@@ -90,6 +91,23 @@ db.serialize(() => {
             synced INTEGER DEFAULT 0
         )
     `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            role TEXT
+        )
+    `);
+
+    // Crear un usuario administrador por defecto si no existe
+    const adminExists = db.prepare(`SELECT id FROM users WHERE username = ?`).get('admin');
+    if (!adminExists) {
+        const hash = bcrypt.hashSync('123', 10);
+        db.prepare(`INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`)
+          .run('admin', hash, 'admin');
+    }
 });
 
 // Función para sincronizar con MySQL cuando esté online
@@ -101,9 +119,9 @@ async function syncWithOnline() {
         const connection = await mysql.createConnection(mysqlConfig);
 
         // Subir imágenes locales a Cloudinary y actualizar URLs
-        const localImages = await db.allAsync(`SELECT * FROM organos_imagenes WHERE url_imagen LIKE '/local_images/%'`);
+        const localImages = await db.allAsync(`SELECT * FROM organos_imagenes WHERE url_imagen LIKE '/upload_images/%'`);
         for (const img of localImages) {
-            const localPath = path.join(__dirname, img.url_imagen.replace('/local_images/', 'local_images/'));
+            const localPath = path.join(__dirname, img.url_imagen.replace('/upload_images/', 'upload_images/'));
             if (fs.existsSync(localPath)) {
                 const result = await cloudinary.uploader.upload(localPath, { folder: 'anatomia_web' });
                 await db.runAsync(`UPDATE organos_imagenes SET url_imagen = ? WHERE id = ?`, result.secure_url, img.id);
@@ -149,4 +167,13 @@ async function syncWithOnline() {
 // Ejecutar sync cada cierto tiempo
 setInterval(syncWithOnline, 60000);
 
-module.exports = db;
+async function hasUnsyncedChanges() {
+    const rows = await db.allAsync('SELECT COUNT(1) AS c FROM sync_changes WHERE synced = 0');
+    return rows[0].c > 0;
+}
+
+module.exports = {
+    db,
+    syncWithOnline,
+    hasUnsyncedChanges
+};

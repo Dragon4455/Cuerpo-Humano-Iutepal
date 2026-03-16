@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const db = require('./db'); // Importar la BD local
+const { db, syncWithOnline, hasUnsyncedChanges } = require('./db'); // Importar la BD local y utilidades
 
 const app = express();
 app.use(cors());
@@ -10,8 +10,11 @@ app.use(express.json());
 // Servir archivos estáticos
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
+app.use('/', express.static(path.join(__dirname)));
 app.use('/templates', express.static(path.join(__dirname, 'templates')));
 app.use('/local_images', express.static(path.join(__dirname, 'local_images')));
+app.use('/upload_images', express.static(path.join(__dirname, 'upload_images')));
 
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
@@ -23,10 +26,19 @@ cloudinary.config({
   api_secret: 'eAuuf8tu6QfUZu6nIlAej0aqI2Q'
 });
 
+// Helper para proteger rutas de administrador
+function requireAdmin(req, res, next) {
+    const role = req.headers['x-role'];
+    if (role !== 'admin') {
+        return res.status(403).json({ error: 'Acceso denegado: se requiere rol de administrador' });
+    }
+    next();
+}
+
 // Configuración de almacenamiento local
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'local_images'));
+    cb(null, path.join(__dirname, 'upload_images'));
   },
   filename: (req, file, cb) => {
     const uniqueName = Date.now() + '-' + file.originalname;
@@ -65,8 +77,45 @@ app.get('/api/:sistema/:id', async (req, res) => {
     }
 });
 
+// Autenticación (login)
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
+
+    try {
+        const user = await db.getAsync('SELECT * FROM users WHERE username = ?', username);
+        if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+        const bcrypt = require('bcryptjs');
+        const valid = bcrypt.compareSync(password, user.password_hash);
+        if (!valid) return res.status(401).json({ error: 'Credenciales inválidas' });
+
+        res.json({ success: true, username: user.username, role: user.role });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/is-online', async (req, res) => {
+    try {
+        const online = await require('is-online')();
+        res.json({ online });
+    } catch (err) {
+        res.json({ online: false });
+    }
+});
+
+app.get('/api/has-local-changes', async (req, res) => {
+    try {
+        const hasChanges = await hasUnsyncedChanges();
+        res.json({ hasChanges });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Crear o actualizar un órgano y su imagen
-app.post('/api/admin/organo', upload.single('archivo'), async (req, res) => {
+app.post('/api/admin/organo', requireAdmin, upload.single('archivo'), async (req, res) => {
     const { sistema, id_svg, nombre, descripcion } = req.body;
     const url_media = req.file ? `/local_images/${req.file.filename}` : null;
 
@@ -98,7 +147,7 @@ app.post('/api/admin/organo', upload.single('archivo'), async (req, res) => {
 });
 
 // Endpoint para eliminar una imagen/video específico
-app.delete('/api/eliminar-recurso/:id', async (req, res) => {
+app.delete('/api/eliminar-recurso/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         const result = await db.runAsync('DELETE FROM organos_imagenes WHERE id = ?', id);
@@ -116,7 +165,7 @@ app.delete('/api/eliminar-recurso/:id', async (req, res) => {
 });
 
 // Endpoint para exportar la BD local a JSON
-app.get('/api/export-db', async (req, res) => {
+app.get('/api/export-db', requireAdmin, async (req, res) => {
     try {
         const tables = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario', 'organos_imagenes', 'sync_changes'];
         const exportData = {};
@@ -133,7 +182,7 @@ app.get('/api/export-db', async (req, res) => {
 });
 
 // Endpoint para importar BD desde JSON
-app.post('/api/import-db', express.json({ limit: '50mb' }), async (req, res) => {
+app.post('/api/import-db', requireAdmin, express.json({ limit: '50mb' }), async (req, res) => {
     const importData = req.body;
 
     try {
@@ -180,14 +229,14 @@ app.post('/api/download-images-local', async (req, res) => {
             if (img.url_imagen.startsWith('http')) {
                 const response = await axios.get(img.url_imagen, { responseType: 'stream' });
                 const filename = `${Date.now()}-${img.id}.jpg`; // Asumir jpg, ajustar si necesario
-                const localPath = path.join(__dirname, 'local_images', filename);
+                const localPath = path.join(__dirname, 'upload_images', filename);
                 const writer = fs.createWriteStream(localPath);
                 response.data.pipe(writer);
                 await new Promise((resolve, reject) => {
                     writer.on('finish', resolve);
                     writer.on('error', reject);
                 });
-                const localUrl = `/local_images/${filename}`;
+                const localUrl = `/upload_images/${filename}`;
                 await db.runAsync(`UPDATE organos_imagenes SET url_imagen = ? WHERE id = ?`, localUrl, img.id);
             }
         }

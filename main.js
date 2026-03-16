@@ -20,7 +20,7 @@ function createWindow() {
   });
 
   // Carga la aplicación web desde el servidor local
-  mainWindow.loadURL('http://localhost:3000/templates/sis.html');
+  mainWindow.loadURL('http://localhost:3000/login.html');
 
   // Abre las herramientas de desarrollo (opcional)
   // mainWindow.webContents.openDevTools();
