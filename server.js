@@ -7,6 +7,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Tablas que representan los sistemas anatómicos (coinciden con archivos SVG en /assets)
+const tablasPermitidas = [
+    'sistema_digestivo',
+    'sistema_respiratorio',
+    'sistema_oseo',
+    'sistema_tegumentario',
+    'sistema_circulatorio',
+    'sistema_endocrino',
+    'sistema_linfatico',
+    'sistema_muscular',
+    'sistema_reproductivo',
+    'sistema_urinario'
+];
+
 // Servir archivos estáticos
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
@@ -52,25 +66,25 @@ const upload = multer({ storage: storage });
 // Ejemplo: /api/sistema_oseo/femur_01
 app.get('/api/:sistema/:id', async (req, res) => {
     const { sistema, id } = req.params;
-    const tablasPermitidas = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario'];
-
     if (!tablasPermitidas.includes(sistema)) {
-        return res.status(400).send("Sistema no válido");
+        return res.status(400).json({ error: 'Sistema no válido' });
     }
 
     try {
         // 1. Obtener datos básicos del órgano
         const organo = await db.getAsync(`SELECT nombre, descripcion FROM ${sistema} WHERE id_svg = ?`, id);
 
-        if (!organo) return res.status(404).json({ error: "No encontrado" });
+        // Si no existe en la tabla aún, devolvemos algo por defecto para que el frontend no rompa.
+        const organoData = organo || { id_svg: id, nombre: id, descripcion: '' };
 
-        // 2. Obtener TODAS las imágenes relacionadas
-        const imagenes = await db.allAsync(`SELECT id, url_imagen, descripcion_imagen FROM organos_imagenes WHERE id_svg = ?`, id);
+        // 2. Obtener solo imágenes locales (no Cloudinary)
+        const imagenes = await db.allAsync(`SELECT id, url_imagen, descripcion_imagen FROM organos_imagenes WHERE id_svg = ? AND (url_imagen LIKE '/local_images/%' OR url_imagen LIKE '/upload_images/%')`, id);
 
         res.json({
             ...organo,
-            imagenes: imagenes 
+            imagenes: imagenes
         });
+
 
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -117,7 +131,13 @@ app.get('/api/has-local-changes', async (req, res) => {
 // Crear o actualizar un órgano y su imagen
 app.post('/api/admin/organo', requireAdmin, upload.single('archivo'), async (req, res) => {
     const { sistema, id_svg, nombre, descripcion } = req.body;
-    const url_media = req.file ? `/local_images/${req.file.filename}` : null;
+
+    if (!tablasPermitidas.includes(sistema)) {
+        return res.status(400).json({ error: 'Sistema no válido' });
+    }
+
+    // Guardar siempre en /upload_images/
+    const url_media = req.file ? `/upload_images/${req.file.filename}` : null;
 
     try {
         // 1. Actualizamos los datos del órgano (Nombre y descripción principal)
@@ -150,24 +170,56 @@ app.post('/api/admin/organo', requireAdmin, upload.single('archivo'), async (req
 app.delete('/api/eliminar-recurso/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
+        // Buscar la URL de la imagen antes de borrar
+        const img = await db.getAsync('SELECT url_imagen FROM organos_imagenes WHERE id = ?', id);
         const result = await db.runAsync('DELETE FROM organos_imagenes WHERE id = ?', id);
+        const changes = result && typeof result.changes === 'number' ? result.changes : 0;
 
-        if (result.changes > 0) {
+        if (changes > 0) {
+            // Si es local, borrar el archivo físico
+            if (img && (img.url_imagen.startsWith('/local_images/') || img.url_imagen.startsWith('/upload_images/'))) {
+                const fs = require('fs');
+                const filePath = path.join(__dirname, img.url_imagen);
+                fs.access(filePath, fs.constants.F_OK, (err) => {
+                    if (!err) {
+                        fs.unlink(filePath, (errUnlink) => {
+                            if (errUnlink) {
+                                console.error('No se pudo borrar el archivo físico:', filePath, errUnlink);
+                            }
+                        });
+                    } else {
+                        console.warn('Archivo físico no encontrado para borrar:', filePath);
+                    }
+                });
+            }
             // Registrar cambio
             await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES ('organos_imagenes', 'DELETE', ?)`, JSON.stringify({ id }));
-            res.status(200).send("Imagen eliminada");
+            res.status(200).json({ success: true, message: "Imagen eliminada" });
         } else {
-            res.status(404).send("No se encontró el archivo");
+            res.status(404).json({ success: false, error: "No se encontró el archivo" });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
 // Endpoint para exportar la BD local a JSON
 app.get('/api/export-db', requireAdmin, async (req, res) => {
     try {
-        const tables = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario', 'organos_imagenes', 'sync_changes'];
+        const tables = [
+            'sistema_digestivo',
+            'sistema_respiratorio',
+            'sistema_oseo',
+            'sistema_tegumentario',
+            'sistema_circulatorio',
+            'sistema_endocrino',
+            'sistema_linfatico',
+            'sistema_muscular',
+            'sistema_reproductivo',
+            'sistema_urinario',
+            'organos_imagenes',
+            'sync_changes'
+        ];
         const exportData = {};
 
         for (const table of tables) {
@@ -186,7 +238,20 @@ app.post('/api/import-db', requireAdmin, express.json({ limit: '50mb' }), async 
     const importData = req.body;
 
     try {
-        const tables = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario', 'organos_imagenes', 'sync_changes'];
+        const tables = [
+            'sistema_digestivo',
+            'sistema_respiratorio',
+            'sistema_oseo',
+            'sistema_tegumentario',
+            'sistema_circulatorio',
+            'sistema_endocrino',
+            'sistema_linfatico',
+            'sistema_muscular',
+            'sistema_reproductivo',
+            'sistema_urinario',
+            'organos_imagenes',
+            'sync_changes'
+        ];
 
         for (const table of tables) {
             if (importData[table]) {

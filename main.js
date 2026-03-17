@@ -1,8 +1,38 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Menu } = require('electron');
 const server = require('./server'); // Importa tu servidor Express
 
 let mainWindow;
 let serverInstance;
+
+function createMenu() {
+  // Si quieres ocultar completamente la barra de menú (File/Edit/View/etc.)
+  // simplemente descomenta la línea siguiente:
+  // Menu.setApplicationMenu(null);
+
+  // Ejemplo de menú personalizado (puedes editar/eliminar las entradas)
+  const template = [
+    {
+      label: 'Archivo',
+      submenu: [
+        { role: 'quit', label: 'Salir' }
+      ]
+    },
+    {
+      label: 'Ver',
+      submenu: [
+        { role: 'reload', label: 'Recargar' },
+        { role: 'toggledevtools', label: 'Alternar DevTools' },
+        { type: 'separator' },
+        { role: 'resetzoom', label: 'Restablecer zoom' },
+        { role: 'zoomin', label: 'Zoom +' },
+        { role: 'zoomout', label: 'Zoom -' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+}
 
 function createWindow() {
   // Iniciar el servidor Express
@@ -33,7 +63,10 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  createMenu();
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

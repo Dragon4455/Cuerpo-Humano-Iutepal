@@ -1,18 +1,10 @@
 const sqlite3 = require('sqlite3').verbose();
 const mysql = require('mysql2/promise');
-const isOnline = require('is-online');
+const isOnline = require('is-online').default || require('is-online');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
-const cloudinary = require('cloudinary').v2;
-
-// Configurar Cloudinary
-cloudinary.config({
-  cloud_name: 'dbdeldijt',
-  api_key: '131155335887578',
-  api_secret: 'eAuuf8tu6QfUZu6nIlAej0aqI2Q'
-});
 
 // Conexión a SQLite local
 const dbPath = path.join(__dirname, 'anatomia_local.db');
@@ -74,6 +66,66 @@ db.serialize(() => {
     `);
 
     db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_circulatorio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_endocrino (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_linfatico (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_muscular (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_reproductivo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_urinario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
         CREATE TABLE IF NOT EXISTS organos_imagenes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_svg TEXT,
@@ -118,17 +170,6 @@ async function syncWithOnline() {
     try {
         const connection = await mysql.createConnection(mysqlConfig);
 
-        // Subir imágenes locales a Cloudinary y actualizar URLs
-        const localImages = await db.allAsync(`SELECT * FROM organos_imagenes WHERE url_imagen LIKE '/upload_images/%'`);
-        for (const img of localImages) {
-            const localPath = path.join(__dirname, img.url_imagen.replace('/upload_images/', 'upload_images/'));
-            if (fs.existsSync(localPath)) {
-                const result = await cloudinary.uploader.upload(localPath, { folder: 'anatomia_web' });
-                await db.runAsync(`UPDATE organos_imagenes SET url_imagen = ? WHERE id = ?`, result.secure_url, img.id);
-                // Registrar cambio para sync
-                await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES ('organos_imagenes', 'UPDATE', ?)`, JSON.stringify({ id: img.id, url_imagen: result.secure_url }));
-            }
-        }
 
         // Enviar cambios locales a online
         const changes = await db.allAsync('SELECT * FROM sync_changes WHERE synced = 0');
@@ -145,7 +186,19 @@ async function syncWithOnline() {
         }
 
         // Descargar actualizaciones de online a local (simplificado)
-        const tables = ['sistema_digestivo', 'sistema_respiratorio', 'sistema_oseo', 'sistema_tegumentario', 'organos_imagenes'];
+        const tables = [
+            'sistema_digestivo',
+            'sistema_respiratorio',
+            'sistema_oseo',
+            'sistema_tegumentario',
+            'sistema_circulatorio',
+            'sistema_endocrino',
+            'sistema_linfatico',
+            'sistema_muscular',
+            'sistema_reproductivo',
+            'sistema_urinario',
+            'organos_imagenes'
+        ];
         for (const table of tables) {
             const [rows] = await connection.execute(`SELECT * FROM ${table}`);
             await db.runAsync(`DELETE FROM ${table}`);

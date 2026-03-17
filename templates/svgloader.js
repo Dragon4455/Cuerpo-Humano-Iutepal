@@ -9,10 +9,38 @@ window.eliminarImagen = async function(idImagen) {
     if (!confirm("¿Estás seguro de que deseas eliminar este archivo multimedia?")) return;
 
     try {
+        const headers = {};
+        if (localStorage.getItem('appRole') === 'admin') {
+            headers['x-role'] = 'admin';
+        }
         const res = await fetch(`http://localhost:3000/api/eliminar-recurso/${idImagen}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers
         });
-        if (res.ok) location.reload(); 
+        // Obtener el órgano actualmente seleccionado
+        const id_svg = document.getElementById('edit-id-svg').value;
+        const sistema = window.location.pathname.replace('.html', '').replace('/', '').replace('templates/', 'sistema_');
+        // Volver a pedir los datos del órgano y actualizar la galería
+        if (id_svg && sistema) {
+            const resOrg = await fetch(`http://localhost:3000/api/${sistema}/${id_svg}`);
+            if (resOrg.ok) {
+                const data = await resOrg.json();
+                // Buscar el elemento SVG seleccionado
+                let svgEl = null;
+                if (window.lastSelectedSvgElement) {
+                    svgEl = window.lastSelectedSvgElement;
+                } else {
+                    // Buscar por id en el SVG
+                    svgEl = document.querySelector(`[id='${id_svg}']`);
+                }
+                if (svgEl) aplicarSeleccion(svgEl, id_svg, data);
+            }
+        }
+        // No mostrar alertas si es 404, solo si es otro error
+        if (!res.ok && res.status !== 404) {
+            const data = await res.json();
+            alert(data.error || 'No se pudo eliminar');
+        }
     } catch (err) {
         console.error("Error en la petición DELETE:", err);
     }
@@ -25,14 +53,17 @@ window.abrirVisor = function(url, nombreOrgano) {
     
     if (!modal || !contenedor) return;
 
-    // OPTIMIZACIÓN FULL PARA EL MODAL
-    const urlFullOptimizada = url.replace('/upload/', '/upload/f_auto,q_auto,vc_auto/');
+    const esLocal = url.startsWith('/local_images/') || url.startsWith('/upload_images/');
+    let urlFullOptimizada = url;
+    if (!esLocal) {
+        urlFullOptimizada = url.replace('/upload/', '/upload/f_auto,q_auto,vc_auto/');
+    }
     const esVideo = url.toLowerCase().match(/\.(mp4|webm|mov)$/) || url.includes('/video/upload/');
 
     contenedor.innerHTML = esVideo 
         ? `<video src="${urlFullOptimizada}" controls autoplay style="max-width:100%; max-height:80vh; border-radius:8px;"></video>`
         : `<img src="${urlFullOptimizada}" style="max-width:100%; max-height:80vh; border-radius:8px; box-shadow: 0 0 30px rgba(0,0,0,0.5);">`;
-    
+
     caption.textContent = nombreOrgano || "Visualización de órgano";
     modal.style.display = "flex";
 };
@@ -90,19 +121,12 @@ function aplicarSeleccion(elemento, id, data) {
         data.imagenes.forEach(img => {
             const urlBase = img.url_imagen;
             const esVideo = urlBase.toLowerCase().match(/\.(mp4|webm|mov)$/) || urlBase.includes('/video/upload/');
-            const esCloudinary = urlBase.includes('cloudinary.com');
+            const esLocal = urlBase.startsWith('/local_images/') || urlBase.startsWith('/upload_images/');
 
-            // Solo aplicar transformaciones de Cloudinary si es una URL de Cloudinary
+            // Solo mostrar imágenes locales
+            if (!esLocal) return;
+
             let urlMiniatura = urlBase;
-            if (esCloudinary) {
-                // --- TRUCO DE CLOUDINARY PARA VIDEOS ---
-                // Si es video, cambiamos la extensión a .jpg para que Cloudinary nos dé un frame (miniatura)
-                // Además aplicamos recorte cuadrado 150x150
-                urlMiniatura = urlBase.replace('/upload/', '/upload/f_auto,q_auto,w_150,h_150,c_fill/');
-                if (esVideo) {
-                    urlMiniatura = urlMiniatura.replace(/\.[^/.]+$/, ".jpg");
-                }
-            }
 
             // 1. Crear elemento para la GALERÍA DE VISTA (Siempre será una IMG ahora)
             const imgMiniatura = document.createElement('img');
@@ -113,11 +137,7 @@ function aplicarSeleccion(elemento, id, data) {
                 console.error('Error cargando imagen:', urlMiniatura);
                 imgMiniatura.src = '/static/placeholder.jpg'; // Placeholder si falla
             };
-            
-            // Si es video, le ponemos un icono visual encima o un borde diferente (opcional)
             if (esVideo) imgMiniatura.style.border = "2px solid #89c0bd";
-
-            // Al hacer clic, SE ABRE EL VIDEO REAL EN EL MODAL
             imgMiniatura.onclick = () => window.abrirVisor(urlBase, data.nombre);
             if (galeriaEl) galeriaEl.appendChild(imgMiniatura);
 
