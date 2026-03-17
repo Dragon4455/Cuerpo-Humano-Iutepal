@@ -6,15 +6,15 @@ if (!role) {
 
 const sistemas = [
     { nombre: "Esquelético", color: "#f8fafc", desc: "Soporte óseo y protección de órganos vitales.", img:"/static/sistemaesqueletico.png", url: "oseo.html"},
-    { nombre: "Muscular", color: "#f43f5e", desc: "Permite el movimiento voluntario e involuntario.", img: "/static/sistemamusculo.png" },
-    { nombre: "Cardiovascular", color: "#ef4444", desc: "Transporte de nutrientes y oxígeno vía sanguínea.", img: "/static/sistemacardio.png" },
+    { nombre: "Muscular", color: "#f43f5e", desc: "Permite el movimiento voluntario e involuntario.", img: "/static/sistemamusculo.png", url:"muscular.html" },
+    { nombre: "Cardiovascular", color: "#ef4444", desc: "Transporte de nutrientes y oxígeno vía sanguínea.", img: "/static/sistemacardio.png", url:"circulatorio.html"},
     { nombre: "Digestivo", color: "#fbbf24", desc: "Procesamiento de alimentos y absorción de energía.", img: "/static/sistemadigestivo.png", url: "digestivo.html" },
     { nombre: "Respiratorio", color: "#06b6d4", desc: "Intercambio de gases en los alvéolos pulmonares.", img: "/static/sistemarespi.png",url: "respiratorio.html"  },
-    { nombre: "Endocrino", color: "#a855f7", desc: "Regulación química mediante hormonas.", img: "/static/sistemaendocri.png" },
-    { nombre: "Urinario", color: "#10b981", desc: "Excreción de desechos y equilibrio electrolítico.", img: "/static/sistemaurin.png" },
-    { nombre: "Linfático", color: "#22c55e", desc: "Sistema inmunitario y drenaje de líquidos.", img: "/static/sistemalinf.png" },
+    { nombre: "Endocrino", color: "#a855f7", desc: "Regulación química mediante hormonas.", img: "/static/sistemaendocri.png",url:"endocrino.html" },
+    { nombre: "Urinario", color: "#10b981", desc: "Excreción de desechos y equilibrio electrolítico.", img: "/static/sistemaurin.png", url:"urinario.html"},
+    { nombre: "Linfático", color: "#22c55e", desc: "Sistema inmunitario y drenaje de líquidos.", img: "/static/sistemalinf.png", url:"linfatico.html" },
     { nombre: "Tegumentario", color: "#f97316", desc: "Protección externa a través de la piel y anexos.", img: "/static/sistemategu.png", url: "tegumentario.html" },
-    { nombre: "Reproductor", color: "#f472b6", desc: "Producción de gametos y continuidad de la especie.", img: "/static/sistemareprd.png" }
+    { nombre: "Reproductor", color: "#f472b6", desc: "Producción de gametos y continuidad de la especie.", img: "/static/sistemareprd.png", url:"reproductivo.html" }
 ];
 
 
