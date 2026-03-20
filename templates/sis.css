@@ -24,17 +24,40 @@ header p { color: #64748b; font-size: 0.7rem; letter-spacing: 2px; margin-top: 1
 
 .page-banner {
     width: 100%;
-    background: linear-gradient(90deg, #6e93e2, #111827);
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    /* Lighter blue gradient duplicated for a seamless unidirectional loop */
+    background: linear-gradient(
+        90deg, 
+        #214e96 0%,   /* Medium-deep anchor blue */
+        #2a61ba 8%, 
+        #3b7ce0 16%, 
+        #5091f0 25%,  /* Lightest point - bright blue */
+        #3b7ce0 33%, 
+        #2a61ba 41%, 
+        #214e96 50%,  /* Midpoint perfectly matches start and end */
+        #2a61ba 58%, 
+        #3b7ce0 66%, 
+        #5091f0 75%,  /* Lightest point - bright blue */
+        #3b7ce0 83%, 
+        #2a61ba 91%, 
+        #214e96 100%
+    );
+    background-size: 200% 100%;
+    animation: banner-flow-smooth 4s linear infinite;
+    border-bottom: 1px solid rgba(255,255,255,0.15); /* Slightly increased opacity for lighter bg */
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
     padding: 14px 10px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); /* Slightly softened shadow */
     position: sticky;
     top: 0;
     z-index: 50;
+}
+
+@keyframes banner-flow-smooth {
+    0% { background-position: 0 0; }
+    100% { background-position: 100% 0; }
 }
 
 .logo-row {
