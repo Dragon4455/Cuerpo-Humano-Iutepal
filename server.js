@@ -32,6 +32,8 @@ app.use('/upload_images', express.static(path.join(__dirname, 'upload_images')))
 
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const archiver = require('archiver');
+const unzipper = require('unzipper');
 
 // Configura tus credenciales (Obtenlas en el dashboard de Cloudinary)
 cloudinary.config({
@@ -49,6 +51,16 @@ function requireAdmin(req, res, next) {
     next();
 }
 
+// Menu manager: permite al servidor notificar al proceso principal si hay admin
+try{
+    const menuManager = require('./menu_manager');
+    app.post('/api/menu/set-role', async (req, res) => {
+        const { role } = req.body || {};
+        menuManager.setAdminMode(role === 'admin');
+        res.json({ success: true });
+    });
+}catch(e){ console.warn('menu_manager not available in server context'); }
+
 // Configuración de almacenamiento local
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -60,7 +72,27 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage: storage });
+// Validación de tipos permitidos: jpg, jpeg, png, gif, mp4, svg
+const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.svg'];
+const allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'image/svg+xml'];
+
+function fileFilter(req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedMime.includes(file.mimetype) || allowedExt.includes(ext)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Formato no válido'), false);
+    }
+}
+
+const upload = multer({ storage: storage, fileFilter });
+
+// Multer para recibir backups (zip)
+const backupStorage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, path.join(__dirname, 'upload_images')),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+});
+const uploadBackup = multer({ storage: backupStorage });
 
 // Endpoint Dinámico: /api/:sistema/:id
 // Ejemplo: /api/sistema_oseo/femur_01
@@ -97,11 +129,14 @@ app.post('/api/login', async (req, res) => {
     if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
 
     try {
-        const user = await db.getAsync('SELECT * FROM users WHERE username = ?', username);
+        console.log('Login attempt for user:', username);
+        const user = await db.getAsync('SELECT * FROM users WHERE username = ?', [username]);
+        console.log('User record:', !!user);
         if (!user) return res.status(401).json({ error: 'Credenciales inválidas' });
 
         const bcrypt = require('bcryptjs');
         const valid = bcrypt.compareSync(password, user.password_hash);
+        console.log('Password valid:', valid);
         if (!valid) return res.status(401).json({ error: 'Credenciales inválidas' });
 
         res.json({ success: true, username: user.username, role: user.role });
@@ -129,41 +164,48 @@ app.get('/api/has-local-changes', async (req, res) => {
 });
 
 // Crear o actualizar un órgano y su imagen
-app.post('/api/admin/organo', requireAdmin, upload.single('archivo'), async (req, res) => {
-    const { sistema, id_svg, nombre, descripcion } = req.body;
-
-    if (!tablasPermitidas.includes(sistema)) {
-        return res.status(400).json({ error: 'Sistema no válido' });
-    }
-
-    // Guardar siempre en /upload_images/
-    const url_media = req.file ? `/upload_images/${req.file.filename}` : null;
-
-    try {
-        // 1. Actualizamos los datos del órgano (Nombre y descripción principal)
-        const existing = await db.getAsync(`SELECT id FROM ${sistema} WHERE id_svg = ?`, id_svg);
-        if (existing) {
-            await db.runAsync(`UPDATE ${sistema} SET nombre = ?, descripcion = ? WHERE id_svg = ?`, nombre, descripcion, id_svg);
-            // Registrar cambio para sync
-            await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES (?, 'UPDATE', ?)`, sistema, JSON.stringify({ id_svg, nombre, descripcion }));
-        } else {
-            await db.runAsync(`INSERT INTO ${sistema} (id_svg, nombre, descripcion) VALUES (?, ?, ?)`, id_svg, nombre, descripcion);
-            // Registrar cambio
-            await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES (?, 'INSERT', ?)`, sistema, JSON.stringify({ id_svg, nombre, descripcion }));
+app.post('/api/admin/organo', requireAdmin, async (req, res) => {
+    // Usamos multer manualmente para interceptar errores de tipo de archivo
+    upload.single('archivo')(req, res, async function (err) {
+        if (err) {
+            return res.status(400).json({ error: 'Formato no válido' });
         }
 
-        // 2. Si hay un archivo nuevo, lo AGREGAMOS a la tabla de imágenes
-        if (url_media) {
-            await db.runAsync(`INSERT INTO organos_imagenes (id_svg, url_imagen, descripcion_imagen) VALUES (?, ?, ?)`, id_svg, url_media, `Galería de ${nombre}`);
-            // Registrar cambio
-            await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES ('organos_imagenes', 'INSERT', ?)`, JSON.stringify({ id_svg, url_imagen: url_media, descripcion_imagen: `Galería de ${nombre}` }));
+        const { sistema, id_svg, nombre, descripcion } = req.body;
+
+        if (!tablasPermitidas.includes(sistema)) {
+            return res.status(400).json({ error: 'Sistema no válido' });
         }
 
-        res.json({ success: true, message: "Contenido actualizado y multimedia añadida" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Error al procesar la solicitud" });
-    }
+        // Guardar siempre en /upload_images/
+        const url_media = req.file ? `/upload_images/${req.file.filename}` : null;
+
+        try {
+            // 1. Actualizamos los datos del órgano (Nombre y descripción principal)
+            const existing = await db.getAsync(`SELECT id FROM ${sistema} WHERE id_svg = ?`, id_svg);
+            if (existing) {
+                await db.runAsync(`UPDATE ${sistema} SET nombre = ?, descripcion = ? WHERE id_svg = ?`, nombre, descripcion, id_svg);
+                // Registrar cambio para sync
+                await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES (?, 'UPDATE', ?)`, sistema, JSON.stringify({ id_svg, nombre, descripcion }));
+            } else {
+                await db.runAsync(`INSERT INTO ${sistema} (id_svg, nombre, descripcion) VALUES (?, ?, ?)`, id_svg, nombre, descripcion);
+                // Registrar cambio
+                await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES (?, 'INSERT', ?)`, sistema, JSON.stringify({ id_svg, nombre, descripcion }));
+            }
+
+            // 2. Si hay un archivo nuevo, lo AGREGAMOS a la tabla de imágenes
+            if (url_media) {
+                await db.runAsync(`INSERT INTO organos_imagenes (id_svg, url_imagen, descripcion_imagen) VALUES (?, ?, ?)`, id_svg, url_media, `Galería de ${nombre}`);
+                // Registrar cambio
+                await db.runAsync(`INSERT INTO sync_changes (table_name, operation, data) VALUES ('organos_imagenes', 'INSERT', ?)`, JSON.stringify({ id_svg, url_imagen: url_media, descripcion_imagen: `Galería de ${nombre}` }));
+            }
+
+            res.json({ success: true, message: "Contenido actualizado y multimedia añadida" });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ error: "Error al procesar la solicitud" });
+        }
+    });
 });
 
 // Endpoint para eliminar una imagen/video específico
@@ -266,6 +308,144 @@ app.post('/api/import-db', requireAdmin, express.json({ limit: '50mb' }), async 
         }
 
         res.json({ success: true, message: 'BD importada correctamente' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para exportar BD y archivos locales a ZIP
+app.get('/api/export-db-zip', requireAdmin, async (req, res) => {
+    try {
+        const tables = [
+            'sistema_digestivo',
+            'sistema_respiratorio',
+            'sistema_oseo',
+            'sistema_tegumentario',
+            'sistema_circulatorio',
+            'sistema_endocrino',
+            'sistema_linfatico',
+            'sistema_muscular',
+            'sistema_reproductivo',
+            'sistema_urinario',
+            'organos_imagenes',
+            'sync_changes'
+        ];
+
+        const exportData = {};
+        for (const table of tables) {
+            const rows = await db.allAsync(`SELECT * FROM ${table}`);
+            exportData[table] = rows;
+        }
+
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', 'attachment; filename="backup.zip"');
+
+        const archive = archiver('zip', { zlib: { level: 9 } });
+        archive.on('error', (err) => { throw err; });
+        archive.pipe(res);
+
+        // Añadir JSON
+        archive.append(JSON.stringify(exportData, null, 2), { name: 'backup.json' });
+
+        // Añadir archivos locales referenciados en organos_imagenes
+        const images = exportData['organos_imagenes'] || [];
+        for (const img of images) {
+            if (img.url_imagen && (img.url_imagen.startsWith('/local_images/') || img.url_imagen.startsWith('/upload_images/'))) {
+                const fullPath = path.join(__dirname, img.url_imagen);
+                try {
+                    const stats = require('fs').statSync(fullPath);
+                    if (stats && stats.isFile()) {
+                        // Guardar dentro de files/ con nombre único
+                        const nameInZip = `files/${path.basename(fullPath)}`;
+                        archive.file(fullPath, { name: nameInZip });
+                    }
+                } catch (e) {
+                    // ignorar archivos faltantes
+                    console.warn('Archivo no encontrado para incluir en ZIP:', fullPath);
+                }
+            }
+        }
+
+        await archive.finalize();
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para importar BD y archivos desde ZIP
+app.post('/api/import-db-zip', requireAdmin, uploadBackup.single('backup'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'Archivo de backup no enviado' });
+
+    const tmpPath = req.file.path;
+    try {
+        const directory = await unzipper.Open.file(tmpPath);
+        const backupEntry = directory.files.find(f => f.path === 'backup.json');
+        if (!backupEntry) return res.status(400).json({ error: 'backup.json no encontrado en el ZIP' });
+
+        const content = await backupEntry.buffer();
+        const importData = JSON.parse(content.toString('utf8'));
+
+        const tables = [
+            'sistema_digestivo',
+            'sistema_respiratorio',
+            'sistema_oseo',
+            'sistema_tegumentario',
+            'sistema_circulatorio',
+            'sistema_endocrino',
+            'sistema_linfatico',
+            'sistema_muscular',
+            'sistema_reproductivo',
+            'sistema_urinario',
+            'organos_imagenes',
+            'sync_changes'
+        ];
+
+        // Limpiar tablas y reinsertar
+        for (const table of tables) {
+            if (importData[table]) {
+                await db.runAsync(`DELETE FROM ${table}`);
+                for (const row of importData[table]) {
+                    const keys = Object.keys(row);
+                    const values = Object.values(row);
+                    const placeholders = keys.map(() => '?').join(', ');
+                    await db.runAsync(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`, values);
+                }
+            }
+        }
+
+        // Extraer archivos del ZIP (carpeta files/) y mover a upload_images
+        const files = directory.files.filter(f => f.path.startsWith('files/'));
+        for (const f of files) {
+            const name = path.basename(f.path);
+            const destPath = path.join(__dirname, 'upload_images', name);
+            const writeStream = require('fs').createWriteStream(destPath);
+            await new Promise((resolve, reject) => {
+                f.stream().pipe(writeStream).on('finish', resolve).on('error', reject);
+            });
+            // Update any organos_imagenes entries that pointed to that basename to point to /upload_images/<name>
+            await db.runAsync(`UPDATE organos_imagenes SET url_imagen = ? WHERE url_imagen LIKE ?`, `/upload_images/${name}`, `%/${name}`);
+        }
+
+        // Borrar archivo temporal
+        require('fs').unlink(tmpPath, () => {});
+
+        res.json({ success: true, message: 'Importación desde ZIP completada' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para cambiar credenciales de usuario (admin)
+app.post('/api/admin/change-credentials', requireAdmin, async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' });
+        const bcrypt = require('bcryptjs');
+        const hash = bcrypt.hashSync(password, 10);
+        await db.runAsync(`UPDATE users SET password_hash = ? WHERE username = ?`, hash, username);
+        res.json({ success: true, message: 'Credenciales actualizadas' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

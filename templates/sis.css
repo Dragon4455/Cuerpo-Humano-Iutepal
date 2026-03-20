@@ -15,7 +15,15 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    overflow: hidden;
+        overflow: hidden;
+}
+
+/* Reserve espacio superior para toolbar cuando exista (responsive) */
+@media (max-width: 1024px){
+    body { padding-top: 64px; }
+}
+@media (min-width: 1025px){
+    body { padding-top: 48px; }
 }
 
 header { text-align: center; padding: 20px; z-index: 10; }
@@ -110,7 +118,7 @@ header p { color: #64748b; font-size: 0.7rem; letter-spacing: 2px; margin-top: 1
     display: flex;
     gap: 30px;
     overflow-x: auto;
-    padding: 60px 40px;
+    padding: 40px 28px;
     width: 100%;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
@@ -308,4 +316,27 @@ header p { color: #64748b; font-size: 0.7rem; letter-spacing: 2px; margin-top: 1
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 10px;
     margin-top: 15px;
+}
+
+/* Responsive adjustments for slider and cards */
+@media (max-width: 1024px) {
+    :root { --card-width: 240px; --card-height: 360px; }
+    .slider-container { gap: 22px; padding: 36px 20px; }
+    .img-container { width: 180px; height: 180px; }
+}
+
+@media (max-width: 700px) {
+    :root { --card-width: 90vw; --card-height: auto; }
+    .slider-container { display: block; padding: 18px 12px; }
+    .card { width: 100%; min-width: unset; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+    .card h2 { font-size: 1rem; }
+    .card p { font-size: 0.95rem; }
+    .img-container { width: 80%; height: auto; }
+    .sys-icon { max-height: 220px }
+    .page-banner { padding-top: 10px; padding-bottom: 10px }
+}
+
+@media (max-width: 420px){
+    .card { padding: 14px; border-radius: 12px }
+    .img-container { width: 100%; }
 }

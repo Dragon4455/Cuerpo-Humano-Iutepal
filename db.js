@@ -6,9 +6,26 @@ const path = require('path');
 const fs = require('fs');
 const { promisify } = require('util');
 
-// Conexión a SQLite local
-const dbPath = path.join(__dirname, 'anatomia_local.db');
+// Conexión a SQLite local. Cuando la app está empaquetada con Electron
+// no es válido crear/abrir la BD dentro de la asar (__dirname). En ese caso
+// usamos la carpeta `userData` de Electron (fuera del asar).
+let dataDir = __dirname;
+try {
+    if (process.versions && process.versions.electron) {
+        const { app } = require('electron');
+        dataDir = app.getPath('userData') || __dirname;
+    }
+} catch (err) {
+    dataDir = __dirname;
+}
+
+if (!fs.existsSync(dataDir)) {
+    try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) { /* ignore */ }
+}
+
+const dbPath = path.join(dataDir, 'anatomia_local.db');
 const db = new sqlite3.Database(dbPath);
+console.log('DB path:', dbPath);
 
 // Promisificar métodos
 db.runAsync = promisify(db.run.bind(db));
@@ -154,12 +171,19 @@ db.serialize(() => {
     `);
 
     // Crear un usuario administrador por defecto si no existe
-    const adminExists = db.prepare(`SELECT id FROM users WHERE username = ?`).get('admin');
-    if (!adminExists) {
-        const hash = bcrypt.hashSync('123', 10);
-        db.prepare(`INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`)
-          .run('admin', hash, 'admin');
-    }
+    db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
+        if (err) {
+            console.error('Error comprobando usuario admin:', err);
+            return;
+        }
+        if (!row) {
+            const hash = bcrypt.hashSync('123', 10);
+            db.run('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)', ['admin', hash, 'admin'], (err2) => {
+                if (err2) console.error('Error creando usuario admin por defecto:', err2);
+                else console.log('Usuario admin creado con contraseña por defecto (123)');
+            });
+        }
+    });
 });
 
 // Función para sincronizar con MySQL cuando esté online

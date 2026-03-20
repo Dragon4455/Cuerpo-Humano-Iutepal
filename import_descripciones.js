@@ -6,8 +6,23 @@ const sqlite3 = require('sqlite3').verbose();
 const sqlFile = path.join(__dirname, 'anatomia_db(4).sql');
 const sqlContent = fs.readFileSync(sqlFile, 'utf8');
 
-// Conectar a la base de datos local
-const dbPath = path.join(__dirname, 'anatomia_local.db');
+// Conectar a la base de datos local. Si se ejecuta dentro de Electron empaquetado,
+// guardamos la BD fuera del asar en la carpeta `userData`.
+let dataDir = __dirname;
+try {
+    if (process.versions && process.versions.electron) {
+        const { app } = require('electron');
+        dataDir = app.getPath('userData') || __dirname;
+    }
+} catch (err) {
+    dataDir = __dirname;
+}
+
+if (!fs.existsSync(dataDir)) {
+    try { fs.mkdirSync(dataDir, { recursive: true }); } catch (e) { /* ignore */ }
+}
+
+const dbPath = path.join(dataDir, 'anatomia_local.db');
 const db = new sqlite3.Database(dbPath);
 
 console.log('=== IMPORTANDO DESCRIPCIONES Y SISTEMAS ===');

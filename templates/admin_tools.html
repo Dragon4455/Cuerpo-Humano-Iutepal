@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ajustes Administrador</title>
+  <style>
+    body{font-family:Inter,Arial;padding:18px;background:#f6f8fa;color:#071029}
+    .container{max-width:980px;margin:0 auto}
+    section{background:#fff;border-radius:8px;padding:12px;margin-bottom:12px;box-shadow:0 6px 16px rgba(11,22,38,0.05)}
+    button{padding:10px 14px;margin:6px}
+    input[type=file]{display:block;margin:8px 0}
+    input, button{font-size:0.95rem}
+
+    /* Responsive */
+    @media (max-width:700px){
+      body{padding:12px}
+      .container{width:100%;padding:0 6px}
+      section{padding:10px}
+      input, button{width:100%;box-sizing:border-box}
+      #credentials input{margin:6px 0}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+  <h1>Ajustes de Administración</h1>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+    <button id="btn-home" style="background:#071029;color:#fff;border-radius:6px;border:0;padding:8px 12px;cursor:pointer">Volver al inicio</button>
+  </div>
+
+  <section id="export">
+    <h2 id="export">Exportar BD (ZIP)</h2>
+    <button id="btn-export">Descargar backup.zip</button>
+  </section>
+
+  <section id="import">
+    <h2 id="import">Importar BD (ZIP)</h2>
+    <input type="file" id="file-import" accept=".zip" />
+    <button id="btn-import">Importar ZIP</button>
+  </section>
+
+  <section id="credentials">
+    <h2 id="credentials">Cambiar Usuario/Contraseña</h2>
+    <input id="new-user" placeholder="Nuevo usuario" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
+    <input id="new-pass" placeholder="Nueva contraseña" type="password" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
+    <button id="btn-change">Actualizar credenciales</button>
+  </section>
+
+  <div id="msg" style="margin-top:12px;color:green"></div>
+  </div>
+
+  <script>
+    async function exportZip(){
+      try{
+        const resp = await fetch('/api/export-db-zip', { headers: { 'x-role':'admin' } });
+        if(!resp.ok) return alert('Error exportando');
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'backup.zip'; document.body.appendChild(a); a.click(); a.remove();
+      }catch(e){ alert('Error exportando'); }
+    }
+
+    async function importZip(file){
+      if(!file) return alert('Selecciona un archivo');
+      const fd = new FormData(); fd.append('backup', file);
+      try{
+        const resp = await fetch('/api/import-db-zip', { method: 'POST', body: fd, headers: { 'x-role':'admin' } });
+        const data = await resp.json();
+        if(resp.ok) { document.getElementById('msg').textContent = 'Importación completada'; }
+        else alert(data.error || 'Error al importar');
+      }catch(e){ alert('Error al importar ZIP'); }
+    }
+
+    async function changeCredentials(){
+      const user = document.getElementById('new-user').value;
+      const pass = document.getElementById('new-pass').value;
+      if(!user || !pass) return alert('Completa ambos campos');
+      try{
+        const resp = await fetch('/api/admin/change-credentials', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-role':'admin' }, body: JSON.stringify({ username: user, password: pass }) });
+        const data = await resp.json();
+        if(resp.ok) document.getElementById('msg').textContent = 'Credenciales actualizadas'; else alert(data.error || 'Error');
+      }catch(e){ alert('Error al actualizar credenciales'); }
+    }
+
+    document.getElementById('btn-export').addEventListener('click', exportZip);
+    document.getElementById('btn-import').addEventListener('click', ()=> importZip(document.getElementById('file-import').files[0]));
+    document.getElementById('btn-change').addEventListener('click', changeCredentials);
+
+    document.getElementById('btn-home').addEventListener('click', ()=>{ window.location.href = '/templates/sis.html'; });
+
+    // Si la página se abrió con hash, scrollear a la sección
+    if(location.hash){
+      const el = document.getElementById(location.hash.replace('#',''));
+      if(el) el.scrollIntoView();
+    }
+  </script>
+</body>
+</html>

@@ -1,37 +1,13 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const server = require('./server'); // Importa tu servidor Express
+const menuManager = require('./menu_manager');
 
 let mainWindow;
 let serverInstance;
 
 function createMenu() {
-  // Si quieres ocultar completamente la barra de menú (File/Edit/View/etc.)
-  // simplemente descomenta la línea siguiente:
-  // Menu.setApplicationMenu(null);
-
-  // Ejemplo de menú personalizado (puedes editar/eliminar las entradas)
-  const template = [
-    {
-      label: 'Archivo',
-      submenu: [
-        { role: 'quit', label: 'Salir' }
-      ]
-    },
-    {
-      label: 'Ver',
-      submenu: [
-        { role: 'reload', label: 'Recargar' },
-        { role: 'toggledevtools', label: 'Alternar DevTools' },
-        { type: 'separator' },
-        { role: 'resetzoom', label: 'Restablecer zoom' },
-        { role: 'zoomin', label: 'Zoom +' },
-        { role: 'zoomout', label: 'Zoom -' }
-      ]
-    }
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+  // ahora delegamos al menu_manager para crear el menú nativo
+  menuManager.buildMenu(false);
 }
 
 function createWindow() {
@@ -49,6 +25,9 @@ function createWindow() {
       contextIsolation: true,
     },
   });
+
+  // inicializar menú nativo con referencia a la ventana
+  menuManager.init(mainWindow);
 
   // Carga la aplicación web desde el servidor local
   mainWindow.loadURL('http://localhost:3000/login.html');

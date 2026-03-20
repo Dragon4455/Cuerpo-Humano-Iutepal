@@ -76,9 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!wantsOnline) {
             console.log('Modo offline seleccionado');
-            localStorage.setItem('appMode', 'offline');
-            localStorage.setItem('appRole', role);
-            localStorage.setItem('appLoggedIn', 'true');
+                localStorage.setItem('appMode', 'offline');
+                localStorage.setItem('appRole', role);
+                localStorage.setItem('appLoggedIn', 'true');
+                try { await fetch('/api/menu/set-role', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ role }) }); } catch(e) { console.warn('No se notificó menú admin', e); }
 
             // Si tenemos internet, ofrecer descargar imágenes para usar offline
             if (online) {
@@ -111,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('appMode', 'online');
         localStorage.setItem('appRole', role);
         localStorage.setItem('appLoggedIn', 'true');
+        try { await fetch('/api/menu/set-role', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ role }) }); } catch(e) { console.warn('No se notificó menú admin', e); }
         console.log('Redirigiendo a sis.html (online)');
         window.location.href = '/templates/sis.html';
     }
@@ -167,21 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Si ya hay sesión guardada, mostrar opción de continuar o iniciar nueva sesión
-    if (localStorage.getItem('appLoggedIn') === 'true') {
-        const continuar = confirm('Ya tienes una sesión activa. ¿Quieres continuar con la sesión actual?\n\nAceptar = Continuar sesión\nCancelar = Nueva sesión');
-        if (continuar) {
-            console.log('Redirigiendo a sis.html (sesión existente)...');
-            window.location.href = '/templates/sis.html';
-            return;
-        } else {
-            // Limpiar sesión anterior
-            console.log('Limpiando sesión anterior...');
-            localStorage.removeItem('appLoggedIn');
-            localStorage.removeItem('appMode');
-            localStorage.removeItem('appRole');
-        }
-    }
+    // Forzar siempre nueva sesión al iniciar: limpiar cualquier estado previo
+    localStorage.removeItem('appLoggedIn');
+    localStorage.removeItem('appMode');
+    localStorage.removeItem('appRole');
 
     // Inicializar UI
     updateUiForRole();

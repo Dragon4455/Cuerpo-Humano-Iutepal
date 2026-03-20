@@ -10,6 +10,12 @@ files:
       - '!build/**'
       - '!*.md'
       - '!import.js'
+      - '!update_urls.js'
+      - '!import_organos_imagenes.js'
+      - '!cambiar_password.js'
+      - '!check_db.js'
+      - '!import_descripciones.js'
+      - '!verify_import.js'
 win:
   target: nsis
 electronVersion: 41.0.1
