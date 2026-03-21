@@ -11,11 +11,6 @@ function createMenu() {
 }
 
 function createWindow() {
-  // Iniciar el servidor Express
-  serverInstance = server.listen(3000, () => {
-    console.log('Servidor iniciado en Electron');
-  });
-
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -29,11 +24,24 @@ function createWindow() {
   // inicializar menú nativo con referencia a la ventana
   menuManager.init(mainWindow);
 
-  // Carga la aplicación web desde el servidor local
-  mainWindow.loadURL('http://localhost:3000/login.html');
+  // Pasar la ruta de usuario de Electron al backend
+  if (server.setUserDataPath) {
+    server.setUserDataPath(app.getPath('userData'));
+  }
 
-  // Abre las herramientas de desarrollo (opcional)
-  // mainWindow.webContents.openDevTools();
+  // Iniciar el servidor Express en un puerto libre y cargar la URL cuando esté listo
+  serverInstance = server.listen(0, () => {
+    const port = serverInstance.address().port;
+    const baseUrl = `http://localhost:${port}`;
+    console.log('Servidor iniciado en Electron en', baseUrl);
+    try { menuManager.setBaseUrl(baseUrl); } catch (e) {}
+    mainWindow.loadURL(`${baseUrl}/login.html`);
+    mainWindow.webContents.openDevTools();
+  });
+
+  serverInstance.on('error', (err) => {
+    console.error('Error iniciando servidor:', err);
+  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;

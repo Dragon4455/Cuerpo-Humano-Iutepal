@@ -13,7 +13,7 @@ window.eliminarImagen = async function(idImagen) {
         if (localStorage.getItem('appRole') === 'admin') {
             headers['x-role'] = 'admin';
         }
-        const res = await fetch(`http://localhost:3000/api/eliminar-recurso/${idImagen}`, {
+        const res = await fetch(`${window.location.origin}/api/eliminar-recurso/${idImagen}`, {
             method: 'DELETE',
             headers
         });
@@ -22,7 +22,7 @@ window.eliminarImagen = async function(idImagen) {
         const sistema = window.location.pathname.replace('.html', '').replace('/', '').replace('templates/', 'sistema_');
         // Volver a pedir los datos del órgano y actualizar la galería
         if (id_svg && sistema) {
-            const resOrg = await fetch(`http://localhost:3000/api/${sistema}/${id_svg}`);
+            const resOrg = await fetch(`${window.location.origin}/api/${sistema}/${id_svg}`);
             if (resOrg.ok) {
                 const data = await resOrg.json();
                 // Buscar el elemento SVG seleccionado
@@ -87,7 +87,7 @@ export async function cargarEInteractuar(url, sistema, contenedorId) {
         contenedor.querySelectorAll('[id^="S"]').forEach(elemento => {
             elemento.style.cursor = "pointer";
             elemento.addEventListener('click', async () => {
-                const res = await fetch(`http://localhost:3000/api/${sistema}/${elemento.id}`);
+                const res = await fetch(`${window.location.origin}/api/${sistema}/${elemento.id}`);
                 const data = res.ok ? await res.json() : { id_svg: elemento.id, nombre: elemento.id, imagenes: [] };
                 aplicarSeleccion(elemento, elemento.id, data);
             });
@@ -196,11 +196,34 @@ function configurarFormularioCRUD() {
             try {
                 const headers = {};
                 if (isAdmin) headers['x-role'] = 'admin';
+                const formData = new FormData();
+                // Copiar campos manualmente, excepto archivo si no hay
+                for (const el of crudForm.elements) {
+                    if (!el.name) continue;
+                    if (el.type === 'file') {
+                        if (el.files && el.files.length > 0) {
+                            formData.append(el.name, el.files[0]);
+                        }
+                    } else {
+                        formData.append(el.name, el.value);
+                         console.log(formData)
+                    }
+                }
+                console.log(crudForm.elements)
+                // Log de depuración: mostrar todos los campos y archivos del FormData
+                for (let [k, v] of formData.entries()) {
+                    if (v instanceof File) {
+                        console.log('FormData archivo:', k, v.name, v.type, v.size);
+                    } else {
+                        console.log('FormData campo:', k, v);
+                    }
+                }
                 const res = await fetch('/api/admin/organo', {
                     method: 'POST',
                     headers,
-                    body: new FormData(crudForm)
+                    body: formData
                 });
+                console.log(res)
                 if (res.ok) location.reload();
                 else {
                     const data = await res.json();

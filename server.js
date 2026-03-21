@@ -1,7 +1,13 @@
 const express = require('express');
+const os = require('os');
+const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
 const { db, syncWithOnline, hasUnsyncedChanges } = require('./db'); // Importar la BD local y utilidades
+
+// Permitir que main.js pase la ruta de usuario
+let userDataPath = null;
+function setUserDataPath(p) { userDataPath = p; }
 
 const app = express();
 app.use(cors());
@@ -21,6 +27,14 @@ const tablasPermitidas = [
     'sistema_urinario'
 ];
 
+// Helper para obtener ruta real de uploads y asegurar que existe
+function getUploadsDir() {
+    const dir = userDataPath ? path.join(userDataPath, 'upload_images') : path.join(__dirname, 'upload_images');
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+    return dir;
+}
 // Servir archivos estáticos
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
@@ -28,7 +42,9 @@ app.use('/img', express.static(path.join(__dirname, 'img')));
 app.use('/', express.static(path.join(__dirname)));
 app.use('/templates', express.static(path.join(__dirname, 'templates')));
 app.use('/local_images', express.static(path.join(__dirname, 'local_images')));
-app.use('/upload_images', express.static(path.join(__dirname, 'upload_images')));
+app.use('/upload_images', (req, res, next) => {
+    express.static(getUploadsDir())(req, res, next);
+});
 
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
@@ -63,22 +79,22 @@ try{
 
 // Configuración de almacenamiento local
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'upload_images'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = Date.now() + '-' + file.originalname;
-    cb(null, uniqueName);
-  }
+    destination: (req, file, cb) => {
+        cb(null, getUploadsDir());
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + file.originalname;
+        cb(null, uniqueName);
+    }
 });
 
-// Validación de tipos permitidos: jpg, jpeg, png, gif, mp4, svg
-const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.svg'];
-const allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'image/svg+xml'];
+// Validación de tipos permitidos: jpg, jpeg, png, gif, mp4, svg, webp, jfif
+const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.svg', '.webp', '.jfif'];
+const allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'image/svg+xml', 'image/webp', 'image/jpg'];
 
 function fileFilter(req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowedMime.includes(file.mimetype) || allowedExt.includes(ext)) {
+    if (allowedExt.includes(ext)) {
         cb(null, true);
     } else {
         cb(new Error('Formato no válido'), false);
@@ -89,7 +105,7 @@ const upload = multer({ storage: storage, fileFilter });
 
 // Multer para recibir backups (zip)
 const backupStorage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, path.join(__dirname, 'upload_images')),
+    destination: (req, file, cb) => cb(null, getUploadsDir()),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const uploadBackup = multer({ storage: backupStorage });
@@ -168,7 +184,8 @@ app.post('/api/admin/organo', requireAdmin, async (req, res) => {
     // Usamos multer manualmente para interceptar errores de tipo de archivo
     upload.single('archivo')(req, res, async function (err) {
         if (err) {
-            return res.status(400).json({ error: 'Formato no válido' });
+            console.error("Error de Multer/Sistema:", err);
+            return res.status(400).json({ error: err.message || 'Error al guardar el archivo' });
         }
 
         const { sistema, id_svg, nombre, descripcion } = req.body;
@@ -494,8 +511,9 @@ app.post('/api/download-images-local', async (req, res) => {
 
 const PORT = 3000;
 
-// Exportar el app para que Electron lo use
+// Exportar el app y la función para setear la ruta de usuario
 module.exports = app;
+module.exports.setUserDataPath = setUserDataPath;
 
 // Solo escuchar si se ejecuta directamente (para desarrollo)
 if (require.main === module) {

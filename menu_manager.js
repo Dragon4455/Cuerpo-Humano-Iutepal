@@ -3,6 +3,7 @@ const { Menu, shell } = require('electron');
 let mainWindowRef = null;
 let menuTemplate = null;
 let ajustesMenuIndex = null;
+let baseUrl = 'http://localhost:3000';
 
 function buildMenu(isAdmin = false) {
   menuTemplate = [
@@ -12,7 +13,7 @@ function buildMenu(isAdmin = false) {
         { label: 'Salir ▾', enabled: false },
         { type: 'separator' },
         { label: 'Salir del sistema', click: () => { if (mainWindowRef) mainWindowRef.close(); } },
-        { label: 'Cerrar sesión', click: () => { if (mainWindowRef) mainWindowRef.loadURL('http://localhost:3000/login.html'); } }
+        { label: 'Cerrar sesión', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/login.html`); } }
       ]
     },
     {
@@ -27,7 +28,8 @@ function buildMenu(isAdmin = false) {
               buttons: ['OK']
             });
         } },
-        { label: 'Abrir documentación', click: () => { shell.openExternal('https://github.com/Dragon4455/Cuerpo-Humano-Iutepal'); } }
+        { label: 'Abrir documentación', click: () => { shell.openExternal('https://github.com/Dragon4455/Cuerpo-Humano-Iutepal'); } },
+        { label: 'Abrir DevTools', click: () => { if (mainWindowRef) mainWindowRef.webContents.openDevTools(); } }
       ]
     }
   ];
@@ -37,9 +39,9 @@ function buildMenu(isAdmin = false) {
     label: 'Ajustes',
     visible: !!isAdmin,
     submenu: [
-      { label: 'Cambiar usuario/contraseña', click: () => { if (mainWindowRef) mainWindowRef.loadURL('http://localhost:3000/templates/admin_tools.html#credentials'); } },
-      { label: 'Exportar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL('http://localhost:3000/templates/admin_tools.html#export'); } },
-      { label: 'Importar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL('http://localhost:3000/templates/admin_tools.html#import'); } }
+        { label: 'Cambiar usuario/contraseña', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#credentials`); } },
+        { label: 'Exportar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#export`); } },
+        { label: 'Importar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#import`); } }
     ]
   };
 
@@ -55,6 +57,10 @@ function init(mainWindow) {
   buildMenu(false);
 }
 
+function setBaseUrl(url) {
+  baseUrl = url || baseUrl;
+}
+
 function setAdminMode(isAdmin) {
   try {
     if (!menuTemplate) buildMenu(isAdmin);
@@ -67,4 +73,4 @@ function setAdminMode(isAdmin) {
   } catch (e) { console.error('menu_manager setAdminMode error', e); }
 }
 
-module.exports = { init, setAdminMode, buildMenu };
+module.exports = { init, setAdminMode, buildMenu, setBaseUrl };
