@@ -15,6 +15,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding-top: 130px;
+    overflow: hidden;
 }
 
 .login-modal {
@@ -24,7 +26,7 @@ body {
     box-shadow: 0 0 var(--glow-blur) 5px var(--glow-cian), 0 4px 24px 1px #23232388;
     max-width: 410px;
     width: 95vw;
-    padding: 36px 32px 24px 32px;
+    padding: 50px 32px 24px 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -108,3 +110,85 @@ body {
 }
 
 .error-msg { color: #ff4444; font-size: 0.9rem; text-align: center; margin-top: 10px; }
+
+#padding{
+    padding-bottom: 2000px;
+}
+
+.page-banner {
+    width: 100%;
+    /* Lighter blue gradient duplicated for a seamless unidirectional loop */
+    background: linear-gradient(
+        90deg, 
+        #214e96 0%,   /* Medium-deep anchor blue */
+        #2a61ba 8%, 
+        #3b7ce0 16%, 
+        #5091f0 25%,  /* Lightest point - bright blue */
+        #3b7ce0 33%, 
+        #2a61ba 41%, 
+        #214e96 50%,  /* Midpoint perfectly matches start and end */
+        #2a61ba 58%, 
+        #3b7ce0 66%, 
+        #5091f0 75%,  /* Lightest point - bright blue */
+        #3b7ce0 83%, 
+        #2a61ba 91%, 
+        #214e96 100%
+    );
+    background-size: 200% 100%;
+    animation: banner-flow-smooth 4s linear infinite;
+    border-bottom: 1px solid rgba(255,255,255,0.15); /* Slightly increased opacity for lighter bg */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); /* Slightly softened shadow */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+}
+
+@keyframes banner-flow-smooth {
+    0% { background-position: 0 0; }
+    100% { background-position: 100% 0; }
+}
+
+.logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.logo-item {
+    width: 150px;
+    height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-item img {
+    max-width: 100%;
+    max-height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.15));
+}
+
+.banner-text {
+    text-align: center;
+    color: #f8fafc;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+}
+
+.banner-text strong { display: block; font-size: 1.1rem; letter-spacing: 1px; }
+
+@media (max-width: 768px) {
+    .logo-item { width: 130px; height: 72px; }
+    .logo-item img { max-height: 60px; }
+    .banner-text { font-size: 0.82rem; }
+}

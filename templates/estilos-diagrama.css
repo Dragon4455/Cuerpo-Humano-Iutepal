@@ -68,7 +68,7 @@
 .selected-organ {
     
     filter: drop-shadow(0 0 16px rgba(51, 215, 188, 0.85)) saturate(1.2) contrast(1.05);
-    stroke: #29c3b1 !important;
+    stroke: #2bac9da0 !important;
     stroke-width: 2px !important;
 }
 
@@ -81,16 +81,16 @@
     .diagram-card { order: 1; min-height: 420px; }
 }
 
-/* Botón flecha para regresar */
+
 .back-btn {
     position: absolute;
     top: 14px;
     left: 14px;
-    width: 46px;
-    height: 46px;
+    width: 140px;
+    height: 25px;
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    align-items: left;
+    justify-content: left;
     border-radius: 10px;
     background: rgba(16,24,32,0.06);
     color: #0f172a;
@@ -104,7 +104,7 @@
     box-shadow: 0 10px 26px rgba(2,6,23,0.12);
     background: rgba(16,24,32,0.10);
 }
-.back-btn svg { width: 20px; height: 20px; display: block; }
+
 
 @media (max-width: 560px) {
     .back-btn { top: 10px; left: 10px; width: 40px; height: 40px; }
