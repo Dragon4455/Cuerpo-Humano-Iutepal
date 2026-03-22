@@ -30,7 +30,6 @@
 
   const container = document.createElement('div'); container.className = 'ch-toolbar';
   container.innerHTML = `
-    <div style="font-weight:700;margin-right:6px">Enciclopedia Anatómica</div>
     <div style="position:relative">
       <button class="btn" id="btn-file">Salir ▾</button>
       <div class="ch-dropdown" id="dd-file">

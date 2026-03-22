@@ -90,8 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            console.log('Redirigiendo a sis.html (offline)');
-            window.location.href = '/templates/sis.html';
+            console.log('Redirigiendo a index.html (offline)');
+            window.location.href = '/templates/index.html';
             return;
         }
 
@@ -113,8 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('appRole', role);
         localStorage.setItem('appLoggedIn', 'true');
         try { await fetch('/api/menu/set-role', { method: 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ role }) }); } catch(e) { console.warn('No se notificó menú admin', e); }
-        console.log('Redirigiendo a sis.html (online)');
-        window.location.href = '/templates/sis.html';
+        console.log('Redirigiendo a index.html (online)');
+        window.location.href = '/templates/index.html';
     }
 
     formLogin.addEventListener('submit', async (event) => {
