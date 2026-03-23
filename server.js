@@ -35,6 +35,34 @@ function getUploadsDir() {
     }
     return dir;
 }
+
+function ensureUploadSync() {
+    const mainDir = getUploadsDir();
+    const fallbackDir = path.join(__dirname, 'upload_images');
+    if (!fs.existsSync(fallbackDir)) {
+        fs.mkdirSync(fallbackDir, { recursive: true });
+    }
+
+    // copiar sin sobrescribir
+    for (const f of fs.readdirSync(fallbackDir)) {
+        const src = path.join(fallbackDir, f);
+        const dest = path.join(mainDir, f);
+        if (fs.statSync(src).isFile() && !fs.existsSync(dest)) {
+            fs.copyFileSync(src, dest);
+        }
+    }
+    for (const f of fs.readdirSync(mainDir)) {
+        const src = path.join(mainDir, f);
+        const dest = path.join(fallbackDir, f);
+        if (fs.statSync(src).isFile() && !fs.existsSync(dest)) {
+            fs.copyFileSync(src, dest);
+        }
+    }
+}
+
+// Inicializar sincronización una vez
+ensureUploadSync();
+
 // Servir archivos estáticos
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 app.use('/static', express.static(path.join(__dirname, 'static')));
@@ -42,9 +70,42 @@ app.use('/img', express.static(path.join(__dirname, 'img')));
 app.use('/', express.static(path.join(__dirname)));
 app.use('/templates', express.static(path.join(__dirname, 'templates')));
 app.use('/local_images', express.static(path.join(__dirname, 'local_images')));
-app.use('/upload_images', (req, res, next) => {
-    express.static(getUploadsDir())(req, res, next);
+app.use('/upload_images', (req, res) => {
+    try {
+        const rawPath = req.path.replace(/^\/+/, '');
+        const decodedPath = decodeURIComponent(rawPath);
+        if (!decodedPath) return res.status(400).send('Archivo no especificado');
+
+        const cleanName = decodedPath.includes('-') ? decodedPath.split('-').slice(1).join('-') : decodedPath;
+
+        const dirUserData = getUploadsDir();
+        const dirProyecto = path.join(__dirname, 'upload_images');
+
+        const posiblesRutas = [
+            path.join(dirUserData, decodedPath),
+            path.join(dirProyecto, decodedPath),
+            path.join(dirUserData, cleanName),
+            path.join(dirProyecto, cleanName)
+        ];
+
+        console.log(`\n🔍 Buscando imagen: ${decodedPath} (clean: ${cleanName})`);
+        posiblesRutas.forEach((p, i) => console.log(` -> Intento ${i + 1}: ${p}`));
+
+        for (const p of posiblesRutas) {
+            if (fs.existsSync(p)) {
+                console.log(`✅ ¡Encontrada en: ${p}`);
+                return res.sendFile(p);
+            }
+        }
+
+        console.log(`❌ FRACASO: La imagen no existe físicamente en ninguna de las rutas posibles.`);
+        return res.status(404).send('Not found');
+    } catch (err) {
+        console.error('Error en /upload_images:', err);
+        return res.status(500).send('Server error');
+    }
 });
+
 
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
@@ -73,6 +134,13 @@ try{
     app.post('/api/menu/set-role', async (req, res) => {
         const { role } = req.body || {};
         menuManager.setAdminMode(role === 'admin');
+        menuManager.setSecretMode(false); // reset secret each time role changes
+        res.json({ success: true });
+    });
+
+    app.post('/api/menu/set-secret', async (req, res) => {
+        const { enabled } = req.body || {};
+        menuManager.setSecretMode(!!enabled);
         res.json({ success: true });
     });
 }catch(e){ console.warn('menu_manager not available in server context'); }
@@ -126,11 +194,59 @@ app.get('/api/:sistema/:id', async (req, res) => {
         const organoData = organo || { id_svg: id, nombre: id, descripcion: '' };
 
         // 2. Obtener solo imágenes locales (no Cloudinary)
-        const imagenes = await db.allAsync(`SELECT id, url_imagen, descripcion_imagen FROM organos_imagenes WHERE id_svg = ? AND (url_imagen LIKE '/local_images/%' OR url_imagen LIKE '/upload_images/%')`, id);
+        let imagenes = await db.allAsync(`SELECT id, url_imagen, descripcion_imagen FROM organos_imagenes WHERE id_svg = ? AND (url_imagen LIKE '/local_images/%' OR url_imagen LIKE '/upload_images/%')`, id);
+
+        // 3. Resolver imagenes en el FS (local o fallback)
+        const resolveImage = (url) => {
+            if (!url) return null;
+
+            // Normalizar las barras y quitar slash inicial
+            const cleanUrl = url.replace(/\\/g, '/');
+            const strip = cleanUrl.replace(/^\//, ''); // 'upload_images/foo.png'
+            const rel = strip.replace(/^upload_images\//, '').replace(/^local_images\//, '');
+
+            // Decodificar %20, etc.
+            let decodedRel = rel;
+            try { decodedRel = decodeURIComponent(rel); } catch (e) {
+                // si no se puede decodificar, usar la ruta original
+            }
+
+            const p1 = path.join(getUploadsDir(), decodedRel);
+            const p2 = path.join(__dirname, 'upload_images', decodedRel);
+            const pLocal = path.join(__dirname, 'local_images', decodedRel);
+
+            if (fs.existsSync(p1)) return `/upload_images/${encodeURI(decodedRel)}`;
+            if (fs.existsSync(p2)) return `/upload_images/${encodeURI(decodedRel)}`;
+            if (fs.existsSync(pLocal)) return `/local_images/${encodeURI(decodedRel)}`;
+
+            // Reintentar con nombre sin timestamp-style prefix ('1234-foo.jpg' -> 'foo.jpg')
+            const cleanRel = decodedRel.includes('-') ? decodedRel.split('-').slice(1).join('-') : decodedRel;
+            if (cleanRel !== decodedRel) {
+                const p1c = path.join(getUploadsDir(), cleanRel);
+                const p2c = path.join(__dirname, 'upload_images', cleanRel);
+                const pLocalc = path.join(__dirname, 'local_images', cleanRel);
+
+                if (fs.existsSync(p1c)) return `/upload_images/${encodeURI(cleanRel)}`;
+                if (fs.existsSync(p2c)) return `/upload_images/${encodeURI(cleanRel)}`;
+                if (fs.existsSync(pLocalc)) return `/local_images/${encodeURI(cleanRel)}`;
+            }
+
+            // Evitar devolver null, para que el frontend pueda intentar renderizar la URL y gestionar el placeholder.
+            const fallbackUrl = cleanUrl.startsWith('/') ? cleanUrl : `/${cleanUrl}`;
+            return fallbackUrl;
+        };
+
+        const imagenesExisten = [];
+        for (const img of imagenes) {
+            const resolvedUrl = resolveImage(img.url_imagen);
+            if (resolvedUrl) {
+                imagenesExisten.push({ ...img, url_imagen: resolvedUrl });
+            }
+        }
 
         res.json({
-            ...organo,
-            imagenes: imagenes
+            ...organoData,
+            imagenes: imagenesExisten
         });
 
 
@@ -315,9 +431,15 @@ app.post('/api/import-db', requireAdmin, express.json({ limit: '50mb' }), async 
         for (const table of tables) {
             if (importData[table]) {
                 await db.runAsync(`DELETE FROM ${table}`);
+
+                const tableColumnsInfo = await db.allAsync(`PRAGMA table_info(${table})`);
+                const tableColumns = tableColumnsInfo.map(col => col.name);
+
                 for (const row of importData[table]) {
-                    const keys = Object.keys(row);
-                    const values = Object.values(row);
+                    const keys = Object.keys(row).filter(k => tableColumns.includes(k));
+                    if (keys.length === 0) continue;
+
+                    const values = keys.map(k => row[k]);
                     const placeholders = keys.map(() => '?').join(', ');
                     await db.runAsync(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`, values);
                 }
@@ -364,23 +486,10 @@ app.get('/api/export-db-zip', requireAdmin, async (req, res) => {
         // Añadir JSON
         archive.append(JSON.stringify(exportData, null, 2), { name: 'backup.json' });
 
-        // Añadir archivos locales referenciados en organos_imagenes
-        const images = exportData['organos_imagenes'] || [];
-        for (const img of images) {
-            if (img.url_imagen && (img.url_imagen.startsWith('/local_images/') || img.url_imagen.startsWith('/upload_images/'))) {
-                const fullPath = path.join(__dirname, img.url_imagen);
-                try {
-                    const stats = require('fs').statSync(fullPath);
-                    if (stats && stats.isFile()) {
-                        // Guardar dentro de files/ con nombre único
-                        const nameInZip = `files/${path.basename(fullPath)}`;
-                        archive.file(fullPath, { name: nameInZip });
-                    }
-                } catch (e) {
-                    // ignorar archivos faltantes
-                    console.warn('Archivo no encontrado para incluir en ZIP:', fullPath);
-                }
-            }
+        // Añadir toda la carpeta upload_images al ZIP (mantener estructura)
+        const uploadDir = path.join(__dirname, 'upload_images');
+        if (require('fs').existsSync(uploadDir)) {
+            archive.directory(uploadDir, 'upload_images');
         }
 
         await archive.finalize();
@@ -431,17 +540,26 @@ app.post('/api/import-db-zip', requireAdmin, uploadBackup.single('backup'), asyn
             }
         }
 
-        // Extraer archivos del ZIP (carpeta files/) y mover a upload_images
-        const files = directory.files.filter(f => f.path.startsWith('files/'));
-        for (const f of files) {
-            const name = path.basename(f.path);
-            const destPath = path.join(__dirname, 'upload_images', name);
+        // Eliminar todo el contenido actual de upload_images
+        const uploadDir = path.join(__dirname, 'upload_images');
+        if (require('fs').existsSync(uploadDir)) {
+            for (const f of require('fs').readdirSync(uploadDir)) {
+                const fp = path.join(uploadDir, f);
+                if (require('fs').statSync(fp).isFile()) require('fs').unlinkSync(fp);
+            }
+        } else {
+            require('fs').mkdirSync(uploadDir, { recursive: true });
+        }
+        // Extraer todos los archivos de upload_images/ del ZIP
+        const filesInZip = directory.files.filter(f => f.path.startsWith('upload_images/'));
+        for (const f of filesInZip) {
+            const rel = f.path.replace(/^upload_images[\/]/, '');
+            if (!rel) continue;
+            const destPath = path.join(uploadDir, rel);
             const writeStream = require('fs').createWriteStream(destPath);
             await new Promise((resolve, reject) => {
                 f.stream().pipe(writeStream).on('finish', resolve).on('error', reject);
             });
-            // Update any organos_imagenes entries that pointed to that basename to point to /upload_images/<name>
-            await db.runAsync(`UPDATE organos_imagenes SET url_imagen = ? WHERE url_imagen LIKE ?`, `/upload_images/${name}`, `%/${name}`);
         }
 
         // Borrar archivo temporal
@@ -463,6 +581,37 @@ app.post('/api/admin/change-credentials', requireAdmin, async (req, res) => {
         const hash = bcrypt.hashSync(password, 10);
         await db.runAsync(`UPDATE users SET password_hash = ? WHERE username = ?`, hash, username);
         res.json({ success: true, message: 'Credenciales actualizadas' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Endpoint para detectar y reportar imágenes locales en upload_images
+app.post('/api/admin/scan-upload-images', requireAdmin, async (req, res) => {
+    try {
+        const uploads = getUploadsDir();
+        const files = fs.existsSync(uploads) ? fs.readdirSync(uploads).filter(f => fs.statSync(path.join(uploads, f)).isFile()) : [];
+        const dbRows = await db.allAsync("SELECT id, id_svg, url_imagen FROM organos_imagenes WHERE url_imagen LIKE '/upload_images/%'");
+        const dbUrls = new Set(dbRows.map(r => r.url_imagen));
+
+        let notRegistered = [];
+        for (const file of files) {
+            const url = `/upload_images/${encodeURIComponent(file)}`;
+            if (!dbUrls.has(url)) {
+                notRegistered.push(file);
+            }
+        }
+
+        const missingFromFS = [];
+        const allPossibleFileNames = new Set(files.map(f => f));
+        for (const row of dbRows) {
+            const asFile = decodeURIComponent(row.url_imagen.replace('/upload_images/', ''));
+            if (!allPossibleFileNames.has(asFile)) {
+                missingFromFS.push(row.url_imagen);
+            }
+        }
+
+        res.json({ success: true, notRegistered, missingFromFS });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

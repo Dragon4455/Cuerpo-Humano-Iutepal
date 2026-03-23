@@ -1,6 +1,6 @@
 {
   "name": "cuerpo-humano-iutepal",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -40,12 +40,14 @@
   },
   "build": {
     "appId": "com.iutepal.anatomia",
-    "productName": "Enciclopedia Anatómica",
+    "productName": "Hombre de Vitrubio",
     "directories": {
       "output": "dist"
     },
     "files": [
       "**/*",
+      "!assets/db/anatomia_local.db",
+      "!assets/upload_images/**",
       "!dist/**",
       "!build/**",
       "!*.md",
@@ -56,6 +58,16 @@
       "!check_db.js",
       "!import_descripciones.js",
       "!verify_import.js"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/db/anatomia_local.db",
+        "to": "assets/db/anatomia_local.db"
+      },
+      {
+        "from": "assets/upload_images/",
+        "to": "assets/upload_images/"
+      }
     ],
     "win": {
       "target": "nsis"

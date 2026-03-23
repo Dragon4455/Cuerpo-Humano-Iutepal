@@ -24,31 +24,32 @@
   </style>
 </head>
 <body>
+
   <div class="container">
-  <h1>Ajustes de Administración</h1>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-    <button id="btn-home" style="background:#071029;color:#fff;border-radius:6px;border:0;padding:8px 12px;cursor:pointer">Volver al inicio</button>
-  </div>
+    <h1>Ajustes de Administración</h1>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+      <button id="btn-home" style="background:#071029;color:#fff;border-radius:6px;border:0;padding:8px 12px;cursor:pointer">Volver al inicio</button>
+    </div>
 
-  <section id="export">
-    <h2 id="export">Exportar BD (ZIP)</h2>
-    <button id="btn-export">Descargar backup.zip</button>
-  </section>
+    <section id="export" style="display:none">
+      <h2 id="export">Exportar BD (ZIP)</h2>
+      <button id="btn-export">Descargar backup.zip</button>
+    </section>
 
-  <section id="import">
-    <h2 id="import">Importar BD (ZIP)</h2>
-    <input type="file" id="file-import" accept=".zip" />
-    <button id="btn-import">Importar ZIP</button>
-  </section>
+    <section id="import" style="display:none">
+      <h2 id="import">Importar BD (ZIP)</h2>
+      <input type="file" id="file-import" accept=".zip" />
+      <button id="btn-import">Importar ZIP</button>
+    </section>
 
-  <section id="credentials">
-    <h2 id="credentials">Cambiar Usuario/Contraseña</h2>
-    <input id="new-user" placeholder="Nuevo usuario" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
-    <input id="new-pass" placeholder="Nueva contraseña" type="password" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
-    <button id="btn-change">Actualizar credenciales</button>
-  </section>
+    <section id="credentials">
+      <h2 id="credentials">Cambiar Usuario/Contraseña</h2>
+      <input id="new-user" placeholder="Nuevo usuario" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
+      <input id="new-pass" placeholder="Nueva contraseña" type="password" style="display:block;margin-bottom:8px;padding:8px;border-radius:6px;border:1px solid #dfe6ee;" />
+      <button id="btn-change">Actualizar credenciales</button>
+    </section>
 
-  <div id="msg" style="margin-top:12px;color:green"></div>
+    <div id="msg" style="margin-top:12px;color:green"></div>
   </div>
 
   <script>
@@ -84,8 +85,25 @@
       }catch(e){ alert('Error al actualizar credenciales'); }
     }
 
-    document.getElementById('btn-export').addEventListener('click', exportZip);
-    document.getElementById('btn-import').addEventListener('click', ()=> importZip(document.getElementById('file-import').files[0]));
+    document.getElementById('btn-export')?.addEventListener('click', exportZip);
+    document.getElementById('btn-import')?.addEventListener('click', ()=> importZip(document.getElementById('file-import').files[0]));
+        // Mostrar export/import solo con Ctrl+Alt+D
+        let secretUnlocked = false;
+        function setSecretUnlocked(on) {
+          secretUnlocked = !!on;
+          document.getElementById('export').style.display = secretUnlocked ? '' : 'none';
+          document.getElementById('import').style.display = secretUnlocked ? '' : 'none';
+        }
+        document.addEventListener('keydown', (event) => {
+          if (event.ctrlKey && event.altKey && (event.key === 'd' || event.key === 'D')) {
+            setSecretUnlocked(true);
+          }
+        });
+        document.addEventListener('keyup', (event) => {
+          if (!event.ctrlKey || !event.altKey || event.key.toLowerCase() === 'd') {
+            setSecretUnlocked(false);
+          }
+        });
     document.getElementById('btn-change').addEventListener('click', changeCredentials);
 
     document.getElementById('btn-home').addEventListener('click', ()=>{ window.location.href = '/templates/index.html'; });

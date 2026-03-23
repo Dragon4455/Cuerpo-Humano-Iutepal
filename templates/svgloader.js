@@ -126,7 +126,7 @@ function aplicarSeleccion(elemento, id, data) {
             // Solo mostrar imágenes locales
             if (!esLocal) return;
 
-            let urlMiniatura = urlBase;
+            const urlMiniatura = urlBase;
 
             // 1. Crear elemento para la GALERÍA DE VISTA (Siempre será una IMG ahora)
             const imgMiniatura = document.createElement('img');

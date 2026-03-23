@@ -47,14 +47,42 @@
       <button class="btn" id="btn-ajustes">Ajustes ▾</button>
       <div class="ch-dropdown" id="dd-ajustes">
         <button id="action-credentials">Cambiar usuario/contraseña</button>
-        <button id="action-export">Exportar BD (ZIP)</button>
-        <button id="action-import">Importar BD (ZIP)</button>
+        <button id="action-export" style="display:none">Exportar BD (ZIP)</button>
+        <button id="action-import" style="display:none">Importar BD (ZIP)</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(container);
 
+  const adminArea = document.getElementById('admin-area');
+  const isAdmin = role === 'admin';
+  let secretUnlocked = false;
+
+  function setSecretUnlocked(on) {
+    secretUnlocked = !!on;
+    // Mostrar/ocultar solo los botones de export/import
+    document.getElementById('action-export').style.display = (isAdmin && secretUnlocked) ? '' : 'none';
+    document.getElementById('action-import').style.display = (isAdmin && secretUnlocked) ? '' : 'none';
+    // actualizar menu nativo
+    fetch('/api/menu/set-secret', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: secretUnlocked })
+    }).catch(() => {});
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (isAdmin && event.ctrlKey && event.altKey && (event.key === 'd' || event.key === 'D')) {
+      setSecretUnlocked(true);
+    }
+  });
+
+  document.addEventListener('keyup', (event) => {
+    if (isAdmin && (!event.ctrlKey || !event.altKey || event.key.toLowerCase() === 'd')) {
+      setSecretUnlocked(false);
+    }
+  });
   // toggle helper
   function toggle(id){
     const el = document.getElementById(id);

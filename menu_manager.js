@@ -4,8 +4,11 @@ let mainWindowRef = null;
 let menuTemplate = null;
 let ajustesMenuIndex = null;
 let baseUrl = 'http://localhost:3000';
+let isAdminMode = false;
+let isSecretUnlocked = false;
 
-function buildMenu(isAdmin = false) {
+function rebuildMenu() {
+  const visibleAjustes = isAdminMode && isSecretUnlocked;
   menuTemplate = [
     {
       label: 'Archivo',
@@ -24,7 +27,7 @@ function buildMenu(isAdmin = false) {
             dialog.showMessageBox({
               type: 'info',
               title: 'Acerca de',
-              message: 'Enciclopedia Anatómica\nCreadores: Equipo de Desarrollo IUTEPAL',
+              message: 'Enciclopedia Anatómica\nCreadores: \nELias Curiel\nNeomar Vasquez\nJaniel Piña\nJosniel Rodriguez',
               buttons: ['OK']
             });
         } },
@@ -34,14 +37,15 @@ function buildMenu(isAdmin = false) {
     }
   ];
 
-  // Ajustes (solo admin)
+  // Ajustes: siempre visible para admin, solo muestra export/import si secret
   const ajustes = {
     label: 'Ajustes',
-    visible: !!isAdmin,
+    visible: isAdminMode,
     submenu: [
-        { label: 'Cambiar usuario/contraseña', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#credentials`); } },
-        { label: 'Exportar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#export`); } },
-        { label: 'Importar BD (ZIP)', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#import`); } }
+      { label: 'Cambiar usuario/contraseña', click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#credentials`); } },
+      { type: 'separator' },
+      { label: 'Exportar BD (ZIP)', visible: visibleAjustes, click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#export`); } },
+      { label: 'Importar BD (ZIP)', visible: visibleAjustes, click: () => { if (mainWindowRef) mainWindowRef.loadURL(`${baseUrl}/templates/admin_tools.html#import`); } }
     ]
   };
 
@@ -52,25 +56,29 @@ function buildMenu(isAdmin = false) {
   Menu.setApplicationMenu(menu);
 }
 
+function setAdminMode(isAdmin) {
+  isAdminMode = !!isAdmin;
+  rebuildMenu();
+}
+
+function setSecretMode(unlocked) {
+  isSecretUnlocked = !!unlocked;
+  rebuildMenu();
+}
+
+function buildMenu(isAdmin = false) {
+  setAdminMode(isAdmin);
+}
+
 function init(mainWindow) {
   mainWindowRef = mainWindow;
-  buildMenu(false);
+  isAdminMode = false;
+  isSecretUnlocked = false;
+  rebuildMenu();
 }
 
 function setBaseUrl(url) {
   baseUrl = url || baseUrl;
 }
 
-function setAdminMode(isAdmin) {
-  try {
-    if (!menuTemplate) buildMenu(isAdmin);
-    else {
-      // Rebuild menu visibility for ajustes
-      menuTemplate[menuTemplate.length - 1].visible = !!isAdmin;
-      const menu = Menu.buildFromTemplate(menuTemplate);
-      Menu.setApplicationMenu(menu);
-    }
-  } catch (e) { console.error('menu_manager setAdminMode error', e); }
-}
-
-module.exports = { init, setAdminMode, buildMenu, setBaseUrl };
+module.exports = { init, buildMenu, setAdminMode, setSecretMode, setBaseUrl };

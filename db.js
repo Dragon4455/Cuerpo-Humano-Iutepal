@@ -40,7 +40,8 @@ const mysqlConfig = {
     database: 'anatomia_db'
 };
 
-// Crear tablas si no existen
+
+// Crear tablas si no existen y migrar columnas si faltan
 db.serialize(() => {
     db.run(`
         CREATE TABLE IF NOT EXISTS sistema_digestivo (
@@ -51,6 +52,13 @@ db.serialize(() => {
             fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Migración: agregar columna 'sincronizado' si no existe
+    db.all("PRAGMA table_info(sistema_digestivo)", (err, columns) => {
+        if (!err && columns && !columns.some(col => col.name === 'sincronizado')) {
+            db.run("ALTER TABLE sistema_digestivo ADD COLUMN sincronizado INTEGER DEFAULT 0");
+        }
+    });
 
     db.run(`
         CREATE TABLE IF NOT EXISTS sistema_respiratorio (
@@ -169,6 +177,27 @@ db.serialize(() => {
             role TEXT
         )
     `);
+
+    // Si se abre una BD antigua, asegurarse de que las tablas incluyan la columna fecha_actualizacion
+    function addColumnIfMissing(tableName, columnDef) {
+        db.run(`ALTER TABLE ${tableName} ADD COLUMN ${columnDef}`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error(`Error agregando columna en ${tableName}:`, err.message);
+            }
+        });
+    }
+
+    const fechaCol = 'fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP';
+    addColumnIfMissing('sistema_digestivo', fechaCol);
+    addColumnIfMissing('sistema_respiratorio', fechaCol);
+    addColumnIfMissing('sistema_oseo', fechaCol);
+    addColumnIfMissing('sistema_tegumentario', fechaCol);
+    addColumnIfMissing('sistema_circulatorio', fechaCol);
+    addColumnIfMissing('sistema_endocrino', fechaCol);
+    addColumnIfMissing('sistema_linfatico', fechaCol);
+    addColumnIfMissing('sistema_muscular', fechaCol);
+    addColumnIfMissing('sistema_reproductivo', fechaCol);
+    addColumnIfMissing('sistema_urinario', fechaCol);
 
     // Crear un usuario administrador por defecto si no existe
     db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {

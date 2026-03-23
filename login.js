@@ -1,3 +1,7 @@
+// Botón salir del sistema
+document.getElementById('btn-exit-app')?.addEventListener('click', () => {
+    try { window.close(); } catch (e) { alert('No se pudo cerrar automáticamente'); }
+});
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM cargado, inicializando login...');
 

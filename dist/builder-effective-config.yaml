@@ -2,10 +2,12 @@ directories:
   output: dist
   buildResources: build
 appId: com.iutepal.anatomia
-productName: Enciclopedia Anatómica
+productName: Hombre de Vitrubio
 files:
   - filter:
       - '**/*'
+      - '!assets/db/anatomia_local.db'
+      - '!assets/upload_images/**'
       - '!dist/**'
       - '!build/**'
       - '!*.md'
@@ -16,6 +18,11 @@ files:
       - '!check_db.js'
       - '!import_descripciones.js'
       - '!verify_import.js'
+extraResources:
+  - from: assets/db/anatomia_local.db
+    to: assets/db/anatomia_local.db
+  - from: assets/upload_images/
+    to: assets/upload_images/
 win:
   target: nsis
 electronVersion: 41.0.1
