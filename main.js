@@ -71,9 +71,11 @@ function createWindow() {
     width: 1200,
     height: 800,
     autoHideMenuBar: true,
+    icon: path.join(__dirname, 'static', 'logo.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      devTools: true, // Habilitar devtools
     },
   });
   mainWindow.maximize();

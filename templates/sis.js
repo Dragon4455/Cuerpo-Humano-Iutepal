@@ -15,8 +15,8 @@ const sistemas = [
     { nombre: "Linfático", color: "#22c55e", desc: "Sistema inmunitario y drenaje de líquidos.", img: "/static/sistemalinf.png", url:"linfatico.html" },
     { nombre: "Tegumentario", color: "#f97316", desc: "Protección externa a través de la piel y anexos.", img: "/static/sistemategu.png", url: "tegumentario.html" },
     { nombre: "Reproductor", color: "#f472b6", desc: "Producción de gametos y continuidad de la especie.", img: "/static/sistemareprd.png", url:"reproductivo.html" },
-    { nombre: "Nervioso Periferico", color: "#72cff4", desc: "PLACEHOLDER.", img: "/static/sistemanervioso.png", url:"nervioso.html" },
-    { nombre: "Nervioso Central", color: "#72cff4", desc: "PLACEHOLDER.", img: "/static/sistemanerviosocentral.png", url:"nerviosocentral.html" }
+    { nombre: "Nervioso Periferico", color: "#72cff4", desc: "Red de nervios que conecta el sistema nervioso central con el resto del cuerpo.", img: "/static/sistemanervioso.png", url:"nervioso.html" },
+    { nombre: "Nervioso Central", color: "#72cff4", desc: "Formado por el encéfalo y la médula espinal, coordina y procesa la información sensorial y motora del organismo.", img: "/static/sistemanerviosocentral.png", url:"nerviosocentral.html" }
 ];
 
 

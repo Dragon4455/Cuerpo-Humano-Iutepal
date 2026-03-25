@@ -24,7 +24,9 @@ const tablasPermitidas = [
     'sistema_linfatico',
     'sistema_muscular',
     'sistema_reproductivo',
-    'sistema_urinario'
+    'sistema_urinario',
+    'sistema_nervioso',
+    'sistema_nerviosocentral'
 ];
 
 // Helper para obtener ruta real de uploads y asegurar que existe
@@ -315,7 +317,13 @@ app.post('/api/admin/organo', requireAdmin, async (req, res) => {
 
         try {
             // 1. Actualizamos los datos del órgano (Nombre y descripción principal)
-            const existing = await db.getAsync(`SELECT id FROM ${sistema} WHERE id_svg = ?`, id_svg);
+            // Usar id_svg como clave primaria para sistema_nerviosocentral
+            let existing;
+            if (sistema === 'sistema_nerviosocentral') {
+                existing = await db.getAsync(`SELECT id_svg FROM sistema_nerviosocentral WHERE id_svg = ?`, id_svg);
+            } else {
+                existing = await db.getAsync(`SELECT id FROM ${sistema} WHERE id_svg = ?`, id_svg);
+            }
             if (existing) {
                 await db.runAsync(`UPDATE ${sistema} SET nombre = ?, descripcion = ? WHERE id_svg = ?`, nombre, descripcion, id_svg);
                 // Registrar cambio para sync
@@ -523,6 +531,8 @@ app.post('/api/import-db-zip', requireAdmin, uploadBackup.single('backup'), asyn
             'sistema_muscular',
             'sistema_reproductivo',
             'sistema_urinario',
+            'sistema_nervioso',
+            'sistema_nerviosocentral',
             'organos_imagenes',
             'sync_changes'
         ];

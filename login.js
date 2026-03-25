@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginError: !!loginError
     });
 
-    let currentRole = 'admin';
+    let currentRole = 'guest';
 
     function updateUiForRole() {
         console.log('Actualizando UI para rol:', currentRole);

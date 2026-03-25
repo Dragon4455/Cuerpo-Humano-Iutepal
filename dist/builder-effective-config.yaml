@@ -2,7 +2,7 @@ directories:
   output: dist
   buildResources: build
 appId: com.iutepal.anatomia
-productName: Hombre de Vitrubio
+productName: Hombre de Vitruvio
 files:
   - filter:
       - '**/*'
@@ -25,4 +25,5 @@ extraResources:
     to: assets/upload_images/
 win:
   target: nsis
+  icon: static/logo.png
 electronVersion: 41.0.1

@@ -1,6 +1,6 @@
 {
   "name": "cuerpo-humano-iutepal",
-  "version": "1.2.2",
+  "version": "1.3.1",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -40,7 +40,7 @@
   },
   "build": {
     "appId": "com.iutepal.anatomia",
-    "productName": "Hombre de Vitrubio",
+    "productName": "Hombre de Vitruvio",
     "directories": {
       "output": "dist"
     },
@@ -70,7 +70,8 @@
       }
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "static/logo.png"
     }
   }
 }

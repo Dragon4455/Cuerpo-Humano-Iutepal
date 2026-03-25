@@ -1,3 +1,20 @@
+-- --------------------------------------------------------
+
+-- Estructura de tabla para la tabla `sistema_nerviosocentral`
+
+CREATE TABLE `sistema_nerviosocentral` (
+  `id` int(11) NOT NULL,
+  `id_svg` varchar(50) NOT NULL,
+  `nombre` varchar(100) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Volcado de datos para la tabla `sistema_nerviosocentral`
+
+INSERT INTO `sistema_nerviosocentral` (`id`, `id_svg`, `nombre`, `descripcion`, `fecha_actualizacion`) VALUES
+(1, 'NC_Encefalo', 'Encéfalo', 'Órgano principal del sistema nervioso central, encargado de procesar la información sensorial y coordinar funciones corporales.', '2026-03-24 12:00:00'),
+(2, 'NC_MedulaEspinal', 'Médula Espinal', 'Estructura larga y delgada que transmite señales entre el encéfalo y el resto del cuerpo.', '2026-03-24 12:00:00');
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/

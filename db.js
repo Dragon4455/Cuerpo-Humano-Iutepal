@@ -151,6 +151,25 @@ db.serialize(() => {
     `);
 
     db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_nervioso (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_svg TEXT UNIQUE,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS sistema_nerviosocentral (
+            id_svg TEXT PRIMARY KEY,
+            nombre TEXT,
+            descripcion TEXT,
+            fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    db.run(`
         CREATE TABLE IF NOT EXISTS organos_imagenes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_svg TEXT,
@@ -198,6 +217,7 @@ db.serialize(() => {
     addColumnIfMissing('sistema_muscular', fechaCol);
     addColumnIfMissing('sistema_reproductivo', fechaCol);
     addColumnIfMissing('sistema_urinario', fechaCol);
+    addColumnIfMissing('sistema_nervioso', fechaCol);
 
     // Crear un usuario administrador por defecto si no existe
     db.get('SELECT id FROM users WHERE username = ?', ['admin'], (err, row) => {
@@ -239,27 +259,32 @@ async function syncWithOnline() {
         }
 
         // Descargar actualizaciones de online a local (simplificado)
-        const tables = [
-            'sistema_digestivo',
-            'sistema_respiratorio',
-            'sistema_oseo',
-            'sistema_tegumentario',
-            'sistema_circulatorio',
-            'sistema_endocrino',
-            'sistema_linfatico',
-            'sistema_muscular',
-            'sistema_reproductivo',
-            'sistema_urinario',
-            'organos_imagenes'
-        ];
-        for (const table of tables) {
-            const [rows] = await connection.execute(`SELECT * FROM ${table}`);
-            await db.runAsync(`DELETE FROM ${table}`);
-            for (const row of rows) {
-                const keys = Object.keys(row);
-                const values = Object.values(row);
-                const placeholders = keys.map(() => '?').join(', ');
-                await db.runAsync(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`, values);
+        // Solo sincronizar si no hay cambios locales pendientes
+        const hasLocalChanges = await hasUnsyncedChanges();
+        if (!hasLocalChanges) {
+            const tables = [
+                'sistema_digestivo',
+                'sistema_respiratorio',
+                'sistema_oseo',
+                'sistema_tegumentario',
+                'sistema_circulatorio',
+                'sistema_endocrino',
+                'sistema_linfatico',
+                'sistema_muscular',
+                'sistema_reproductivo',
+                'sistema_urinario',
+                'sistema_nervioso',
+                'organos_imagenes'
+            ];
+            for (const table of tables) {
+                const [rows] = await connection.execute(`SELECT * FROM ${table}`);
+                await db.runAsync(`DELETE FROM ${table}`);
+                for (const row of rows) {
+                    const keys = Object.keys(row);
+                    const values = Object.values(row);
+                    const placeholders = keys.map(() => '?').join(', ');
+                    await db.runAsync(`INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders})`, values);
+                }
             }
         }
 
